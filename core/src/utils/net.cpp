@@ -160,8 +160,8 @@ namespace net {
 
                 // Set timeout
                 timeval tv;
-                tv.tv_sec = 0;
-                tv.tv_usec = timeout * 1000;
+                tv.tv_sec = timeout / 1000;
+                tv.tv_usec = (timeout-tv.tv_sec*1000) * 1000;
 
                 // Wait for data
                 int err = select(sock+1, &set, NULL, &set, (timeout > 0) ? &tv : NULL);
@@ -225,8 +225,8 @@ namespace net {
 
         // Define timeout
         timeval tv;
-        tv.tv_sec = 0;
-        tv.tv_usec = timeout * 1000;
+        tv.tv_sec = timeout / 1000;
+        tv.tv_usec = (timeout-tv.tv_sec*1000) * 1000;
 
         // Wait for data or error
         if (timeout != NONBLOCKING) {
@@ -381,6 +381,30 @@ namespace net {
 
         // Create socket
         SockHandle_t s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+		// TODO: allow caller to setup required options
+
+        // set option SO_BROADCAST
+        int broadcastEnable = 1;
+        if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable)) == -1) {
+            closeSocket(s);
+            throw std::runtime_error("Could not set SO_BROADCAST option");
+            return NULL;
+        }
+        // set option SO_REUSEADDR
+        int reuseEnable = 1;
+        if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &reuseEnable, sizeof(reuseEnable)) == -1) {
+            closeSocket(s);
+            throw std::runtime_error("Could not set SO_REUSEADDR option");
+            return NULL;
+        }
+        // set option SO_RCVBUF = 16 MB
+        int receiveBufferSize = 16*1024*1024;
+        if (setsockopt(s, SOL_SOCKET, SO_RCVBUF, &receiveBufferSize, sizeof(receiveBufferSize)) != 0) {
+            closeSocket(s);
+            throw std::runtime_error("Could not set SO_RCVBUF option");
+            return NULL;
+        }
 
         // Bind socket to local port
         if (bind(s, (sockaddr*)&laddr.addr, sizeof(sockaddr_in))) {
