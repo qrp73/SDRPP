@@ -58,8 +58,12 @@ namespace displaymenu {
 
     const IQFrontEnd::FFTWindow fftWindowList[] = {
         IQFrontEnd::FFTWindow::RECTANGULAR,
+        IQFrontEnd::FFTWindow::HAMMING,
+        IQFrontEnd::FFTWindow::HANN,
         IQFrontEnd::FFTWindow::BLACKMAN,
-        IQFrontEnd::FFTWindow::NUTTALL
+        IQFrontEnd::FFTWindow::NUTTALL,
+        IQFrontEnd::FFTWindow::BLACKMAN_HARRIS4,
+        IQFrontEnd::FFTWindow::BLACKMAN_HARRIS7,
     };
 
     void updateFFTSpeeds() {
@@ -229,7 +233,7 @@ namespace displaymenu {
 
         ImGui::LeftLabel("FFT Window");
         ImGui::SetNextItemWidth(menuWidth - ImGui::GetCursorPosX());
-        if (ImGui::Combo("##sdrpp_fft_window", &selectedWindow, "Rectangular\0Blackman\0Nuttall\0")) {
+        if (ImGui::Combo("##sdrpp_fft_window", &selectedWindow, "Rectangular\0Hamming\0Hann\0Blackman\0Nuttall\0Blackman-Harris-4\0Blackman-Harris-7\0")) {
             sigpath::iqFrontEnd.setFFTWindow(fftWindowList[selectedWindow]);
             core::configManager.acquire();
             core::configManager.conf["fftWindow"] = selectedWindow;

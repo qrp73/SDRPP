@@ -1,6 +1,11 @@
 #include "iq_frontend.h"
+#include "../dsp/window/rectangular.h"
+#include "../dsp/window/hann.h"
+#include "../dsp/window/hamming.h"
 #include "../dsp/window/blackman.h"
 #include "../dsp/window/nuttall.h"
+#include "../dsp/window/blackman_harris4.h"
+#include "../dsp/window/blackman_harris7.h"
 #include <utils/flog.h>
 #include <gui/gui.h>
 #include <core.h>
@@ -47,14 +52,20 @@ void IQFrontEnd::init(dsp::stream<dsp::complex_t>* in, double sampleRate, bool b
     fftSink.init(&reshape.out, handler, this);
 
     fftWindowBuf = dsp::buffer::alloc<float>(_nzFFTSize);
-    if (_fftWindow == FFTWindow::RECTANGULAR) {
-        for (int i = 0; i < _nzFFTSize; i++) { fftWindowBuf[i] = 0; }
+    double wscale = 0.0f;
+    switch ( _fftWindow ) {
+        case FFTWindow::RECTANGULAR:      for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::rectangular(i, _nzFFTSize);     break;
+        case FFTWindow::HANN:             for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::hann(i, _nzFFTSize);            break;
+        case FFTWindow::HAMMING:          for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::hamming(i, _nzFFTSize);         break;
+        case FFTWindow::BLACKMAN:         for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::blackman(i, _nzFFTSize);        break;
+        case FFTWindow::NUTTALL:          for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::nuttall(i, _nzFFTSize);         break;
+        case FFTWindow::BLACKMAN_HARRIS4: for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::blackmanHarris4(i, _nzFFTSize); break;
+        case FFTWindow::BLACKMAN_HARRIS7: for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::blackmanHarris7(i, _nzFFTSize); break;
     }
-    else if (_fftWindow == FFTWindow::BLACKMAN) {
-        for (int i = 0; i < _nzFFTSize; i++) { fftWindowBuf[i] = dsp::window::blackman(i, _nzFFTSize); }
-    }
-    else if (_fftWindow == FFTWindow::NUTTALL) {
-        for (int i = 0; i < _nzFFTSize; i++) { fftWindowBuf[i] = dsp::window::nuttall(i, _nzFFTSize); }
+    wscale = _nzFFTSize / wscale;
+    for (int i = 0; i < _nzFFTSize; i+=2) {
+        fftWindowBuf[i]   *= -wscale;
+        fftWindowBuf[i+1] *=  wscale;
     }
 
     fftInBuf = (fftwf_complex*)fftwf_malloc(_fftSize * sizeof(fftwf_complex));
@@ -280,14 +291,20 @@ void IQFrontEnd::updateFFTPath(bool updateWaterfall) {
     // Update window
     dsp::buffer::free(fftWindowBuf);
     fftWindowBuf = dsp::buffer::alloc<float>(_nzFFTSize);
-    if (_fftWindow == FFTWindow::RECTANGULAR) {
-        for (int i = 0; i < _nzFFTSize; i++) { fftWindowBuf[i] = 1.0f * ((i % 2) ? -1.0f : 1.0f); }
+    double wscale = 0.0f;
+    switch ( _fftWindow ) {
+        case FFTWindow::RECTANGULAR:      for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::rectangular(i, _nzFFTSize);     break;
+        case FFTWindow::HANN:             for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::hann(i, _nzFFTSize);            break;
+        case FFTWindow::HAMMING:          for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::hamming(i, _nzFFTSize);         break;
+        case FFTWindow::BLACKMAN:         for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::blackman(i, _nzFFTSize);        break;
+        case FFTWindow::NUTTALL:          for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::nuttall(i, _nzFFTSize);         break;
+        case FFTWindow::BLACKMAN_HARRIS4: for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::blackmanHarris4(i, _nzFFTSize); break;
+        case FFTWindow::BLACKMAN_HARRIS7: for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::blackmanHarris7(i, _nzFFTSize); break;
     }
-    else if (_fftWindow == FFTWindow::BLACKMAN) {
-        for (int i = 0; i < _nzFFTSize; i++) { fftWindowBuf[i] = dsp::window::blackman(i, _nzFFTSize) * ((i % 2) ? -1.0f : 1.0f); }
-    }
-    else if (_fftWindow == FFTWindow::NUTTALL) {
-        for (int i = 0; i < _nzFFTSize; i++) { fftWindowBuf[i] = dsp::window::nuttall(i, _nzFFTSize) * ((i % 2) ? -1.0f : 1.0f); }
+    wscale = _nzFFTSize / wscale;
+    for (int i = 0; i < _nzFFTSize; i+=2) {
+        fftWindowBuf[i]   *= -wscale;
+        fftWindowBuf[i+1] *=  wscale;
     }
 
     // Update FFT plan
