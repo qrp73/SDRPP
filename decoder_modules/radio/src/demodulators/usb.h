@@ -69,7 +69,7 @@ namespace demod {
         const char* getName() { return "USB"; }
         double getIFSampleRate() { return 24000.0; }
         double getAFSampleRate() { return getIFSampleRate(); }
-        double getDefaultBandwidth() { return 2800.0; }
+        double getDefaultBandwidth() { return 2700.0; }
         double getMinBandwidth() { return 500.0; }
         double getMaxBandwidth() { return getIFSampleRate() / 2.0; }
         bool getBandwidthLocked() { return false; }

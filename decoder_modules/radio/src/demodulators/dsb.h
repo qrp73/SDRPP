@@ -68,7 +68,7 @@ namespace demod {
         const char* getName() { return "DSB"; }
         double getIFSampleRate() { return 24000.0; }
         double getAFSampleRate() { return getIFSampleRate(); }
-        double getDefaultBandwidth() { return 4600.0; }
+        double getDefaultBandwidth() { return 12000.0; }
         double getMinBandwidth() { return 1000.0; }
         double getMaxBandwidth() { return getIFSampleRate() / 2.0; }
         bool getBandwidthLocked() { return false; }
