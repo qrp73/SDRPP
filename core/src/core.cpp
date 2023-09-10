@@ -160,7 +160,7 @@ int sdrpp_main(int argc, char* argv[]) {
     defConfig["menuElements"][7]["open"] = true;
 
     defConfig["menuWidth"] = 300;
-    defConfig["min"] = -120.0;
+    defConfig["min"] = -160.0;
 
     // Module instances
     defConfig["moduleInstances"]["Airspy Source"]["module"] = "airspy_source";
