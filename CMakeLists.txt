@@ -47,7 +47,6 @@ option(OPT_BUILD_RADIO "Main audio modulation decoder (AM, FM, SSB, etc...)" ON)
 option(OPT_BUILD_WEATHER_SAT_DECODER "Build the HRPT decoder module (no dependencies required)" OFF)
 
 # Misc
-option(OPT_BUILD_DISCORD_PRESENCE "Build the Discord Rich Presence module" OFF)
 option(OPT_BUILD_FREQUENCY_MANAGER "Build the Frequency Manager module" ON)
 option(OPT_BUILD_RECORDER "Audio and baseband recorder" ON)
 option(OPT_BUILD_RIGCTL_CLIENT "Rigctl client to make SDR++ act as a panadapter" ON)
@@ -244,10 +243,6 @@ endif (OPT_BUILD_WEATHER_SAT_DECODER)
 
 
 # Misc
-if (OPT_BUILD_DISCORD_PRESENCE)
-add_subdirectory("misc_modules/discord_integration")
-endif (OPT_BUILD_DISCORD_PRESENCE)
-
 if (OPT_BUILD_FREQUENCY_MANAGER)
 add_subdirectory("misc_modules/frequency_manager")
 endif (OPT_BUILD_FREQUENCY_MANAGER)
