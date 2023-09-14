@@ -177,6 +177,8 @@ int sdrpp_main(int argc, char* argv[]) {
     defConfig["moduleInstances"]["HackRF Source"]["enabled"] = true;
     defConfig["moduleInstances"]["Hermes Source"]["module"] = "hermes_source";
     defConfig["moduleInstances"]["Hermes Source"]["enabled"] = true;
+    defConfig["moduleInstances"]["HPSDR Source"]["module"] = "hpsdr_source";
+    defConfig["moduleInstances"]["HPSDR Source"]["enabled"] = true;
     defConfig["moduleInstances"]["LimeSDR Source"]["module"] = "limesdr_source";
     defConfig["moduleInstances"]["LimeSDR Source"]["enabled"] = true;
     defConfig["moduleInstances"]["PlutoSDR Source"]["module"] = "plutosdr_source";

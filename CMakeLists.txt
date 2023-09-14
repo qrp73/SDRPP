@@ -16,6 +16,7 @@ option(OPT_BUILD_BLADERF_SOURCE "Build BladeRF Source Module (Dependencies: libb
 option(OPT_BUILD_FILE_SOURCE "Wav file source" ON)
 option(OPT_BUILD_HACKRF_SOURCE "Build HackRF Source Module (Dependencies: libhackrf)" ON)
 option(OPT_BUILD_HERMES_SOURCE "Build Hermes Source Module (no dependencies required)" ON)
+option(OPT_BUILD_HPSDR_SOURCE "Build HPSDR Source Module (no dependencies required)" ON)
 option(OPT_BUILD_LIMESDR_SOURCE "Build LimeSDR Source Module (Dependencies: liblimesuite)" OFF)
 option(OPT_BUILD_PERSEUS_SOURCE "Build Perseus Source Module (Dependencies: libperseus-sdr)" OFF)
 option(OPT_BUILD_PLUTOSDR_SOURCE "Build PlutoSDR Source Module (Dependencies: libiio, libad9361)" ON)
@@ -136,6 +137,10 @@ endif (OPT_BUILD_HACKRF_SOURCE)
 if (OPT_BUILD_HERMES_SOURCE)
 add_subdirectory("source_modules/hermes_source")
 endif (OPT_BUILD_HERMES_SOURCE)
+
+if (OPT_BUILD_HPSDR_SOURCE)
+add_subdirectory("source_modules/hpsdr_source")
+endif (OPT_BUILD_HPSDR_SOURCE)
 
 if (OPT_BUILD_LIMESDR_SOURCE)
 add_subdirectory("source_modules/limesdr_source")

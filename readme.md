@@ -16,17 +16,18 @@ Have good day and 73
 - unity gain for FFT and window functions
 - added Blackman-Harris-7, Blackman-Harris-4, Hamming and Hann window functions
 - fixed AM,FM,WFM,SSB,DSB bandwidth
+- hpsdr_source module for HPSDR protocol enabled devices
 - some minor fixes
 
 
 ## Hardware
 
-The only hardware that I have is RTLSDRv3 and custom FPGA DSP chains for different hardware which are using my custom protocol or HPSDR protocol. So, this project is targeted primary on RTLSDRv3 and HPSDR protocol devices. But feel free to report issues with other hardware.
+The only hardware that I have is RTLSDRv3 and custom FPGA DSP chains for different hardware which are using my custom or HPSDR protocol. So, this project is targeted primary on RTLSDRv3 and HPSDR protocol devices. But feel free to report issues with other hardware.
 
 
 ## Source code
 
-You can download latest code version from this repository: https://github.com/qrp73/SDRPP
+You can download the latest code version from this repository: https://github.com/qrp73/SDRPP
 
 
 ## Build & Install
