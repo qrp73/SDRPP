@@ -245,19 +245,18 @@ namespace hpsdr {
         int numberOfRx = ctrl_NumberOfRx;
         int bufLen = usableBufLen[numberOfRx];
         int channelStep = numberOfRx * 6 + 2;
-        for (int r = 0; r < numberOfRx; r++)
+        // Convert to float according to AES17 standard [float=value/(pow(2,N)/2 - 1)]
+        // Use 0x800000 scale instead of 0x7fffff in order to fit min negative sample value into -1.0..+1.0 range, 
+        // note it will add a little gain offset.
+        const float scale = 1.0 / 0x800000;
+        // only RX#1 is used
+        for (int r = 0; r < 1 /* numberOfRx */; r++)
         {
-            if (r != 0) continue; // only RX#1 is used
-            
             int index = _iqBufferIndexes[r];
             for (uint8_t* ptr = buffer + 8 + r * 6; ptr < buffer + bufLen; ptr += channelStep)
             {
-                int32_t si = getInt24_BE(ptr+0);
-                int32_t sq = getInt24_BE(ptr+3);
-                                
-                // Convert to float according to AES17 standard [float=value/(pow(2,N)/2 - 1)]
-                _iqStream->writeBuf[index].im = (float)si / (float)0x7fffff;
-                _iqStream->writeBuf[index].re = (float)sq / (float)0x7fffff;
+                _iqStream->writeBuf[index].re = getInt24_BE(ptr+3) * scale;
+                _iqStream->writeBuf[index].im = getInt24_BE(ptr+0) * scale;
                                 
                 index++;
                 if (index >= _iqSize)
