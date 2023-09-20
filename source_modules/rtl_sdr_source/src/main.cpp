@@ -521,12 +521,15 @@ private:
 
     static void asyncHandler(unsigned char* buf, uint32_t len, void* ctx) {
         RTLSDRSourceModule* _this = (RTLSDRSourceModule*)ctx;
-        int sampCount = len / 2;
-        for (int i = 0; i < sampCount; i++) {
-            _this->stream.writeBuf[i].re = (float)(buf[i * 2] - 127) / 128.0f;
-            _this->stream.writeBuf[i].im = (float)(buf[(i * 2) + 1] - 127) / 128.0f;
+        auto sampleCount = len / 2; 
+        const int32_t voffset  = 0x80;
+        const float   invScale = 1.0 / 0x80;
+        auto writeBuf = _this->stream.writeBuf;
+        for (int i = 0; i < sampleCount; i++) {
+            writeBuf[i].re = (buf[i*2+0] - voffset) * invScale;
+            writeBuf[i].im = (buf[i*2+1] - voffset) * invScale;
         }
-        if (!_this->stream.swap(sampCount)) { return; }
+        _this->stream.swap(sampleCount);
     }
 
     void updateGainTxt() {
