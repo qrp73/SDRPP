@@ -40,7 +40,7 @@ namespace style {
 
         // Create huge font range
         ImFontGlyphRangesBuilder hugeBuilder;
-        const ImWchar hugeRange[] = { 'S', 'S', 'D', 'D', 'R', 'R', '+', '+', ' ', ' ', 0 };
+        const ImWchar hugeRange[] = { 'S', 'S', 'D', 'D', 'R', 'R', 'P', 'P', ' ', ' ', 0 };
         hugeBuilder.AddRanges(hugeRange);
         hugeBuilder.BuildRanges(&hugeRanges);
         

@@ -1,7 +1,8 @@
 #include <credits.h>
 
 namespace sdrpp_credits {
-    const char* contributors[] = {
+    const char* authors[] = {
+        "Alexandre Rouma (ON5RYZ)",
         "Aang23",
         "Alexsey Shestacov",
         "Aosync",
@@ -23,70 +24,19 @@ namespace sdrpp_credits {
         "Syne Ardwin (WI9SYN)",
         "Szymon Zakrent",
         "Youssef Touil",
-        "Zimm"
+        "Zimm",
+        "qrp73"
     };
 
     const char* libraries[] = {
         "Dear ImGui (ocornut)",
         "fftw3 (fftw.org)",
         "glfw (Camilla Löwy)",
+        "VOLK (libvolk.org)",
         "json (nlohmann)",
-        "Portable File Dialogs"
+        "Portable File Dialogs",
     };
 
-    const char* hardwareDonators[] = {
-        "Aaronia AG",
-        "Airspy",
-        "Analog Devices",
-        "CaribouLabs",
-        "Ettus Research",
-        "Howard Su",
-        "MyriadRF",
-        "Nuand",
-        "RFspace",
-        "RTL-SDRblog",
-        "SDRplay"
-    };
-
-    const char* patrons[] = {
-        "Bob Logan",
-        "Christian Häusler",
-        "Croccydile",
-        "Dale L Puckett (K0HYD)",
-        "Daniele D'Agnelli",
-        "D. Jones",
-        "Dexruus",
-        "EB3FRN",
-        "Eric Johnson",
-        "Ernest Murphy (NH7L)",
-        "Flinger Films",
-        "Frank Werner (HB9FXQ)",
-        "gringogrigio",
-        "Jeff Moe",
-        "Joe Cupano",
-        "KD1SQ",
-        "Kezza",
-        "Krys Kamieniecki",
-        "Lee Donaghy",
-        "Lee KD1SQ",
-        ".lozenge. (Hank Hill)",
-        "Martin Herren (HB9FXX)",
-        "ON4MU",
-        "Passion-Radio.com",
-        "Paul Maine",
-        "Peter Betz",
-        "Scanner School",
-        "Scott Palmer",
-        "SignalsEverywhere",
-        "Syne Ardwin (WI9SYN)",
-        "W4IPA",
-        "William Arcand (W1WRA)",
-        "Yves Rougy",
-        "Zipper"
-    };
-
-    const int contributorCount = sizeof(contributors) / sizeof(char*);
-    const int libraryCount = sizeof(libraries) / sizeof(char*);
-    const int hardwareDonatorCount = sizeof(hardwareDonators) / sizeof(char*);
-    const int patronCount = sizeof(patrons) / sizeof(char*);
+    const int authorsCount = sizeof(authors) / sizeof(char*);
+    const int librariesCount = sizeof(libraries) / sizeof(char*);
 }

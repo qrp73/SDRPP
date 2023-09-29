@@ -23,48 +23,46 @@ namespace credits {
         ImGui::OpenPopup("Credits");
         ImGui::BeginPopupModal("Credits", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
 
+        ImGui::Columns(2, "HeaderColumns", true);
         ImGui::PushFont(style::hugeFont);
-        ImGui::TextUnformatted("SDR++          ");
+        ImGui::TextUnformatted("SDRPP");
         ImGui::PopFont();
-        ImGui::SameLine();
-        ImGui::Image(icons::LOGO, imageSize);
+        //ImGui::SameLine();
+        //ImGui::Image(icons::LOGO, imageSize);
+        ImGui::NextColumn();
+        ImGui::TextUnformatted("SDRPP v" VERSION_STR " (Built at " __TIME__ ", " __DATE__ ")");
         ImGui::Spacing();
         ImGui::Spacing();
         ImGui::Spacing();
+        ImGui::TextUnformatted("https://github.com/qrp73/SDRPP");
+        ImGui::Columns(1, "HeaderColumns", true);
 
-        ImGui::TextUnformatted("This software is brought to you by Alexandre Rouma (ON5RYZ) with the help of\n\n");
-
-        ImGui::Columns(4, "CreditColumns", true);
-
-        ImGui::TextUnformatted("Contributors");
-        for (int i = 0; i < sdrpp_credits::contributorCount; i++) {
-            ImGui::BulletText("%s", sdrpp_credits::contributors[i]);
+        ImGui::TextUnformatted("SDRPP is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published");
+        ImGui::TextUnformatted("by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.");
+        ImGui::Spacing();
+        ImGui::Spacing();
+        ImGui::Spacing();
+        ImGui::TextUnformatted("Portions of this software was written by the following authors:");
+        ImGui::Spacing();
+        ImGui::Columns(3, "CreditColumns", true);
+        for (int i = 0; i < sdrpp_credits::authorsCount; i++) {
+            ImGui::BulletText("%s", sdrpp_credits::authors[i]);
+            if ((i % 10)==9) ImGui::NextColumn();
         }
-
-        ImGui::NextColumn();
-        ImGui::TextUnformatted("Libraries");
-        for (int i = 0; i < sdrpp_credits::libraryCount; i++) {
-            ImGui::BulletText("%s", sdrpp_credits::libraries[i]);
-        }
-
-        ImGui::NextColumn();
-        ImGui::TextUnformatted("Hardware Donators");
-        for (int i = 0; i < sdrpp_credits::hardwareDonatorCount; i++) {
-            ImGui::BulletText("%s", sdrpp_credits::hardwareDonators[i]);
-        }
-
-        ImGui::NextColumn();
-        ImGui::TextUnformatted("Patrons");
-        for (int i = 0; i < sdrpp_credits::patronCount; i++) {
-            ImGui::BulletText("%s", sdrpp_credits::patrons[i]);
-        }
-
         ImGui::Columns(1, "CreditColumnsEnd", true);
 
         ImGui::Spacing();
         ImGui::Spacing();
         ImGui::Spacing();
-        ImGui::TextUnformatted("SDR++ v" VERSION_STR " (Built at " __TIME__ ", " __DATE__ ")");
+        ImGui::TextUnformatted("This software using the following libraries:");
+        ImGui::Spacing();
+        ImGui::Columns(3, "LibrariesColumns", true);
+        for (int i = 0; i < sdrpp_credits::librariesCount; i++) {
+            ImGui::BulletText("%s", sdrpp_credits::libraries[i]);
+            if ((i % 4)==3) ImGui::NextColumn();
+        }
+        ImGui::Columns(1, "LibrariesColumnsEnd", true);
+
 
         ImGui::EndPopup();
         ImGui::PopStyleColor();
