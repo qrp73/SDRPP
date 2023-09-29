@@ -16,7 +16,9 @@ Have good day and 73
 - unity gain for FFT and window functions
 - added Blackman-Harris-7, Blackman-Harris-4, Hamming and Hann window functions
 - fixed AM,FM,WFM,SSB,DSB bandwidth
-- hpsdr_source module for HPSDR protocol enabled devices
+- rtl_sdr_source: fixed sample conversion
+- hpsdr_source: added new module for HPSDR protocol enabled devices
+- file_source: code replaced with a new multi-format support (supported: FLOAT 32/64 bit and PCM 8/16/24/32 bit)
 - some minor fixes
 
 
