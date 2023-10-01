@@ -14,9 +14,9 @@
 
 SDRPP_MOD_INFO{
     /* Name:            */ "audio_source",
-    /* Description:     */ "Audio source module for SDR++",
-    /* Author:          */ "Ryzerth",
-    /* Version:         */ 0, 1, 0,
+    /* Description:     */ "Audio source module for SDRPP",
+    /* Author:          */ "Ryzerth, qrp73",
+    /* Version:         */ 0, 1, 1,
     /* Max instances    */ 1
 };
 
@@ -89,14 +89,14 @@ public:
                 // Get info
                 auto info = audio.getDeviceInfo(i);
 
-                // Check that it has a stereo input
-                if (info.probed && info.inputChannels < 2) { continue; }
+                // Check that it has a channel
+                if (info.probed && info.inputChannels < 1) { continue; }
 
                 // Save info
                 DeviceInfo dinfo = { info, i };
                 devices.define(info.name, info.name, dinfo);
             }
-            catch (std::exception e) {
+            catch (const std::exception& e) {
                 flog::error("Error getting audio device info: {0}", e.what());
             }
         }
@@ -118,6 +118,7 @@ public:
         devId = devices.keyId(name);
         auto info = devices.value(devId).info;
         selectedDevice = name;
+        channelCount = info.inputChannels;
 
         // List samplerates and save ID of the preference one
         sampleRates.clear();
@@ -177,19 +178,20 @@ private:
         // Stream options
         RtAudio::StreamParameters parameters;
         parameters.deviceId = _this->devices[_this->devId].id;
-        parameters.nChannels = 2;
+        parameters.nChannels = _this->channelCount == 1 ? 1 : 2;
         unsigned int bufferFrames = _this->sampleRate / 200;
         RtAudio::StreamOptions opts;
         opts.flags = RTAUDIO_MINIMIZE_LATENCY;
-        opts.streamName = "SDR++ Audio Source";
+        opts.streamName = "SDRPP Audio Source";
 
         // Open and start stream
         try {
+            auto callback = _this->channelCount == 1 ? callbackMono : callbackStereo;
             _this->audio.openStream(NULL, &parameters, RTAUDIO_FLOAT32, _this->sampleRate, &bufferFrames, callback, _this, &opts);
             _this->audio.startStream();
             _this->running = true;
         }
-        catch (std::exception e) {
+        catch (const std::exception& e) {
             flog::error("Error opening audio device: {0}", e.what());
         }
         
@@ -247,7 +249,19 @@ private:
         if (_this->running) { SmGui::EndDisabled(); }
     }
 
-    static int callback(void* outputBuffer, void* inputBuffer, unsigned int nBufferFrames, double streamTime, RtAudioStreamStatus status, void* userData) {
+    static int callbackMono(void* outputBuffer, void* inputBuffer, unsigned int nBufferFrames, double streamTime, RtAudioStreamStatus status, void* userData) {
+        AudioSourceModule* _this = (AudioSourceModule*)userData;
+        auto writeBuf = _this->stream.writeBuf;
+        auto pSrc = (float*)inputBuffer;
+        for (size_t i=0; i < nBufferFrames; i++) {
+            writeBuf[i].re = pSrc[i];
+            writeBuf[i].im = 0;
+        }
+        _this->stream.swap(nBufferFrames);
+        return 0;
+    }
+
+    static int callbackStereo(void* outputBuffer, void* inputBuffer, unsigned int nBufferFrames, double streamTime, RtAudioStreamStatus status, void* userData) {
         AudioSourceModule* _this = (AudioSourceModule*)userData;
         memcpy(_this->stream.writeBuf, inputBuffer, nBufferFrames * sizeof(dsp::complex_t));
         _this->stream.swap(nBufferFrames);
@@ -258,6 +272,7 @@ private:
     bool enabled = true;
     dsp::stream<dsp::complex_t> stream;
     double sampleRate;
+    int channelCount;
     SourceManager::SourceHandler handler;
     bool running = false;
     
