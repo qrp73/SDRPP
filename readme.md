@@ -19,6 +19,7 @@ Have good day and 73
 - rtl_sdr_source: fixed sample conversion
 - hpsdr_source: added new module for HPSDR protocol enabled devices
 - file_source: code replaced with a new multi-format support (supported: FLOAT 32/64 bit and PCM 8/16/24/32 bit)
+- audio_source: added support for mono source, fixed error logging
 - some minor fixes
 
 
