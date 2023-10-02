@@ -45,13 +45,8 @@ public:
         this->name = name;
 
         // Define samplerates
-        samplerates.define(48000,  "48  kHz", hpsdr::HpsdrSampleRate::SR_48KHZ);
-        samplerates.define(96000,  "96  kHz", hpsdr::HpsdrSampleRate::SR_96KHZ);
-        samplerates.define(192000, "192 kHz", hpsdr::HpsdrSampleRate::SR_192KHZ);
-        samplerates.define(384000, "384 kHz", hpsdr::HpsdrSampleRate::SR_384KHZ);
-
-        srId = samplerates.valueId(hpsdr::HpsdrSampleRate::SR_192KHZ);
-        sampleRate = samplerates.key(srId);
+        samplerates.clear();
+        _srId = -1;
 
         handler.ctx = this;
         handler.selectHandler = menuSelected;
@@ -116,7 +111,6 @@ private:
         }
 
         // Default config
-        srId = samplerates.valueId(hpsdr::HpsdrSampleRate::SR_192KHZ);
         _isAtt = false;
         _attGain = 0;
 
@@ -124,9 +118,30 @@ private:
         devId = devices.keyId(mac);
         selectedMac = mac;
         config.acquire();
-        if (config.conf["devices"][selectedMac].contains("samplerate")) {
-            int sr = config.conf["devices"][selectedMac]["samplerate"];
-            if (samplerates.keyExists(sr)) { srId = samplerates.keyId(sr); }
+
+        samplerates.clear();
+        _srId = -1;
+        //sampleRate = 0;
+        if (!selectedMac.empty()) {
+            if (!config.conf["devices"][selectedMac].contains("sampleRates")) {
+                config.conf["devices"][selectedMac]["sampleRates"] = json::array();
+                config.conf["devices"][selectedMac]["sampleRates"].push_back({{"id", 0}, {"value", 48000},  {"text", "48  kHz"}});
+                config.conf["devices"][selectedMac]["sampleRates"].push_back({{"id", 1}, {"value", 96000},  {"text", "96  kHz"}});
+                config.conf["devices"][selectedMac]["sampleRates"].push_back({{"id", 2}, {"value", 192000}, {"text", "192 kHz"}});
+                config.conf["devices"][selectedMac]["sampleRates"].push_back({{"id", 3}, {"value", 384000}, {"text", "384 kHz"}});
+            }
+            for (auto const& item : config.conf["devices"][selectedMac]["sampleRates"]) {
+                int srId    = item["id"];
+                auto srText = item["text"];
+                int srValue = item["value"];
+                samplerates.define(srValue,  srText, (hpsdr::HpsdrSampleRate)srId);
+            }
+            
+            if (config.conf["devices"][selectedMac].contains("sampleRateId")) {
+                _srId = config.conf["devices"][selectedMac]["sampleRateId"];
+            } else {
+                _srId = 2;
+            }
         }
         if (config.conf["devices"][selectedMac].contains("preamp")) {
             _isPreamp = config.conf["devices"][selectedMac]["preamp"];
@@ -146,8 +161,10 @@ private:
         config.release();
 
         // Update host samplerate
-        sampleRate = samplerates.key(srId);
-        core::setInputSampleRate(sampleRate);
+        if (_srId >= 0) {
+            auto sampleRate = samplerates.key(_srId);
+            core::setInputSampleRate(sampleRate);
+        }
     }
 
     static void menuSelected(void* ctx) {
@@ -167,7 +184,10 @@ private:
             _this->selectMac(_this->selectedMac);
         }
 
-        core::setInputSampleRate(_this->sampleRate);
+        if (_this->_srId >= 0) {
+            auto sampleRate = _this->samplerates.key(_this->_srId);
+            core::setInputSampleRate(sampleRate);
+        }
     }
 
     static void menuDeselected(void* ctx) {
@@ -179,11 +199,12 @@ private:
         HpsdrSourceModule* _this = (HpsdrSourceModule*)ctx;
         flog::info("HpsdrSourceModule::start()");
 
-        if (_this->running || _this->selectedMac.empty()) { return; }
+        if (_this->running || _this->selectedMac.empty() || _this->_srId < 0) { return; }
         
         _this->dev = hpsdr::open(_this->devices[_this->devId].addr, &_this->stream);
 
-        _this->dev->setSamplerate(_this->samplerates[_this->srId], _this->samplerates.key(_this->srId));
+        auto sampleRate = _this->samplerates.key(_this->_srId);
+        _this->dev->setSamplerate((hpsdr::HpsdrSampleRate)_this->_srId, sampleRate);
         _this->dev->setFrequency(_this->freq);
         _this->dev->setPreamp(_this->_isPreamp);
         _this->dev->setAtten(_this->_attGain, _this->_isAtt);
@@ -227,13 +248,20 @@ private:
             }
         }
 
-        if (SmGui::Combo(CONCAT("##_hpsdr_sr_sel_", _this->name), &_this->srId, _this->samplerates.txt)) {
-            _this->sampleRate = _this->samplerates.key(_this->srId);
-            core::setInputSampleRate(_this->sampleRate);
+        if (SmGui::Combo(CONCAT("##_hpsdr_sr_sel_", _this->name), &_this->_srId, _this->samplerates.txt)) {
             if (!_this->selectedMac.empty()) {
-                config.acquire();
-                config.conf["devices"][_this->selectedMac]["samplerate"] = _this->samplerates.key(_this->srId);
-                config.release(true);
+                if (_this->_srId >= 0) {
+                    auto sampleRate = _this->samplerates.key(_this->_srId);
+                    core::setInputSampleRate(sampleRate);
+
+                    config.acquire();
+                    config.conf["devices"][_this->selectedMac]["sampleRateId"] = _this->_srId;
+                    config.release(true);
+                } else {
+                    config.acquire();
+                    config.conf["devices"][_this->selectedMac].erase("sampleRateId");                
+                    config.release(true);
+                }
             }
         }
 
@@ -310,7 +338,6 @@ private:
     std::string name;
     bool enabled = true;
     dsp::stream<dsp::complex_t> stream;
-    double sampleRate;
     SourceManager::SourceHandler handler;
     bool running = false;
     std::string selectedMac = "";
@@ -320,7 +347,7 @@ private:
 
     double freq;
     int devId = 0;
-    int srId = 0;
+    int _srId = -1;
     
     bool _isPreamp = false;
     bool _isAtt = false;
