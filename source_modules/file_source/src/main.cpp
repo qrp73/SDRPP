@@ -72,6 +72,8 @@ public:
         handler.tuneHandler = tune;
         handler.stream = &stream;
         sigpath::sourceManager.registerSource("File", &handler);
+        
+        updateFmtText();
     }
 
     ~FileSourceModule() {
@@ -135,6 +137,19 @@ private:
         return true;
     }
 
+    void updateFmtText() {
+        if (_reader == NULL || !_reader->isValid()) {
+            _fmtText = "FMT: -, - bit, - kHz";
+            return;
+        }
+        char sbuf[128];
+        sprintf(sbuf, "FMT: %u/%s, %u bit, %.f kHz", 
+            _reader->getFormat(),
+            _reader->getFormatName(), 
+            _reader->getBitDepth(), 
+            _reader->getSampleRate()/1000.0f);
+        _fmtText = std::string(sbuf);
+    }
 
     static void menuSelected(void* ctx) {
         FileSourceModule* _this = (FileSourceModule*)ctx;
@@ -197,6 +212,7 @@ private:
                 delete _this->_reader;
                 _this->_reader = NULL;
             }
+            _this->updateFmtText();
             _this->reset();
             if (_this->fileSelect.pathIsValid()) {
                 try {
@@ -207,6 +223,7 @@ private:
                         _this->_reader = NULL;
                         throw std::runtime_error("Sample rate may not be zero");
                     }
+                    _this->updateFmtText();
                     _this->updateSampleRate(_this->_reader->getSampleRate());
                     _this->reset();
                     flog::info("FileSource: core::setInputSampleRate({0})", _this->_sampleRate);
@@ -229,17 +246,7 @@ private:
 
         SmGui::BeginDisabled();
         SmGui::FillWidth();
-        char sbuf[128];
-        if (_this->_reader != NULL) {
-            sprintf(sbuf, "FMT: %u/%s, %u bit, %.f kHz", 
-                _this->_reader->getFormat(),
-                _this->_reader->getFormatName(), 
-                _this->_reader->getBitDepth(), 
-                _this->_reader->getSampleRate()/1000.0f);
-        } else {
-            sprintf(sbuf, "FMT: -, - bit, - kHz");
-        }
-        SmGui::LeftLabel(sbuf);
+        SmGui::LeftLabel(_this->_fmtText.c_str());
         SmGui::EndDisabled();
         
         ImGui::NewLine();
@@ -275,6 +282,7 @@ private:
         
         auto fmtCode = _this->_reader->getFormat();
         auto fmtBits = _this->_reader->getBitDepth();
+        
         // Left=I, Right=Q
         if (fmtCode == WAVE_FORMAT::IEEE_FLOAT && fmtBits == 32) {
             // WAV uses f32 format for 32 bit IEEE_FLOAT
@@ -414,6 +422,7 @@ private:
     uint32_t _sampleRate = 1000000;
     float _invSampleRate = 1.0 / 1000000;
     int64_t _centerFreq = 0;
+    std::string _fmtText;
 };
 
 MOD_EXPORT void _INIT_() {
