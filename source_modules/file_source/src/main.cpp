@@ -306,7 +306,7 @@ private:
         } else if (fmtCode == WAVE_FORMAT::PCM && fmtBits == 8) {
             // WAV uses u8 format for 8 bit PCM
             const int32_t vzero = 0x80;
-            const float   scale = 0x80;
+            const float   scale = 0x7f;
             const float   invScale = 1.0 / scale;
             uint8_t inBuf[blockSize * 2];
             while (true) {
@@ -325,7 +325,7 @@ private:
             }
         } else if (fmtCode == WAVE_FORMAT::PCM && fmtBits == 16) {
             // WAV uses i16 format for 16 bit PCM
-            const float scale = 0x8000;
+            const float scale = 0x7fff;
             int16_t inBuf[blockSize * 2];
             while (true) {
                 const size_t read = reader->readSamples(inBuf, sizeof(inBuf));
@@ -337,7 +337,7 @@ private:
             }
         } else if (fmtCode == WAVE_FORMAT::PCM && fmtBits == 24) {
             // WAV uses i24 format for 24 bit PCM
-            const float scale = 0x800000;
+            const float scale = 0x7fffff;
             const float invScale = 1.0 / scale;
             uint8_t inBuf[blockSize * 2 * 3];
             while (true) {
@@ -357,7 +357,7 @@ private:
             }
         } else if (fmtCode == WAVE_FORMAT::PCM && fmtBits == 32) {
             // WAV uses i32 format for 32 bit PCM
-            const float scale = 0x80000000;
+            const float scale = 0x7fffffff;
             int32_t inBuf[blockSize * 2];
             while (true) {
                 const size_t read = _this->_reader->readSamples(inBuf, sizeof(inBuf));
