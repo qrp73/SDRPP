@@ -25,6 +25,7 @@ namespace wav {
     enum SampleType {
         SAMP_TYPE_UINT8,
         SAMP_TYPE_INT16,
+        SAMP_TYPE_INT24,
         SAMP_TYPE_INT32,
         SAMP_TYPE_FLOAT32
     };
@@ -65,6 +66,7 @@ namespace wav {
 
         uint8_t* bufU8 = NULL;
         int16_t* bufI16 = NULL;
+        uint8_t* bufI24 = NULL;
         int32_t* bufI32 = NULL;
         size_t samplesWritten = 0;
     };

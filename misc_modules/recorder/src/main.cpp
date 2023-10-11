@@ -47,10 +47,11 @@ public:
         // Define option lists
         containers.define("WAV", wav::FORMAT_WAV);
         // containers.define("RF64", wav::FORMAT_RF64); // Disabled for now
-        sampleTypes.define(wav::SAMP_TYPE_UINT8, "Uint8", wav::SAMP_TYPE_UINT8);
-        sampleTypes.define(wav::SAMP_TYPE_INT16, "Int16", wav::SAMP_TYPE_INT16);
-        sampleTypes.define(wav::SAMP_TYPE_INT32, "Int32", wav::SAMP_TYPE_INT32);
-        sampleTypes.define(wav::SAMP_TYPE_FLOAT32, "Float32", wav::SAMP_TYPE_FLOAT32);
+        sampleTypes.define(wav::SAMP_TYPE_UINT8,    "8-bit PCM", wav::SAMP_TYPE_UINT8);
+        sampleTypes.define(wav::SAMP_TYPE_INT16,   "16-bit PCM", wav::SAMP_TYPE_INT16);
+        sampleTypes.define(wav::SAMP_TYPE_INT24,   "24-bit PCM", wav::SAMP_TYPE_INT24);
+        sampleTypes.define(wav::SAMP_TYPE_INT32,   "32-bit PCM", wav::SAMP_TYPE_INT32);
+        sampleTypes.define(wav::SAMP_TYPE_FLOAT32, "32-bit FLOAT", wav::SAMP_TYPE_FLOAT32);
 
         // Load default config for option lists
         containerId = containers.valueId(wav::FORMAT_WAV);

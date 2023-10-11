@@ -15,6 +15,7 @@ namespace wav {
     std::map<SampleType, int> SAMP_BITS = {
         { SAMP_TYPE_UINT8, 8 },
         { SAMP_TYPE_INT16, 16 },
+        { SAMP_TYPE_INT24, 24 },
         { SAMP_TYPE_INT32, 32 },
         { SAMP_TYPE_FLOAT32, 32 }
     };
@@ -57,6 +58,9 @@ namespace wav {
             break;
         case SAMP_TYPE_INT16:
             bufI16 = dsp::buffer::alloc<int16_t>(STREAM_BUFFER_SIZE * _channels);
+            break;
+        case SAMP_TYPE_INT24:
+            bufI24 = dsp::buffer::alloc<uint8_t>(STREAM_BUFFER_SIZE * _channels * 3);
             break;
         case SAMP_TYPE_INT32:
             bufI32 = dsp::buffer::alloc<int32_t>(STREAM_BUFFER_SIZE * _channels);
@@ -106,6 +110,10 @@ namespace wav {
         if (bufI16) {
             dsp::buffer::free(bufI16);
             bufI16 = NULL;
+        }
+        if (bufI24) {
+            dsp::buffer::free(bufI24);
+            bufI24 = NULL;
         }
         if (bufI32) {
             dsp::buffer::free(bufI32);
@@ -158,16 +166,28 @@ namespace wav {
         case SAMP_TYPE_UINT8:
             // Volk doesn't support unsigned ints yet :/
             for (int i = 0; i < tcount; i++) {
-                bufU8[i] = (samples[i] * 127.0f) + 128.0f;
+                bufU8[i] = (samples[i] * 0x7f) + 0x80;
             }
             rw.write(bufU8, tbytes);
             break;
         case SAMP_TYPE_INT16:
-            volk_32f_s32f_convert_16i(bufI16, samples, 32767.0f, tcount);
+            volk_32f_s32f_convert_16i(bufI16, samples, 0x7fff, tcount);
             rw.write((uint8_t*)bufI16, tbytes);
             break;
+        case SAMP_TYPE_INT24:
+            {
+                auto pDst = (uint8_t*)bufI24;
+                for (auto i = 0; i < tcount; i++) {
+                    int32_t v = (int32_t)(samples[i] * 0x7fffff);
+                    *pDst++ = (uint8_t)v;
+                    *pDst++ = (uint8_t)(v >> 8);
+                    *pDst++ = (uint8_t)(v >> 16);
+                }
+                rw.write((uint8_t*)bufI24, tbytes);
+            }
+            break;
         case SAMP_TYPE_INT32:
-            volk_32f_s32f_convert_32i(bufI32, samples, 2147483647.0f, tcount);
+            volk_32f_s32f_convert_32i(bufI32, samples, 0x7fffffff, tcount);
             rw.write((uint8_t*)bufI32, tbytes);
             break;
         case SAMP_TYPE_FLOAT32:
