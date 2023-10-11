@@ -55,7 +55,7 @@ public:
                 txtDevList += info.name;
                 txtDevList += '\0';
             }
-            catch (std::exception e) {
+            catch (std::exception& e) {
                 flog::error("AudioSinkModule Error getting audio device info: {0}", e.what());
             }
         }
