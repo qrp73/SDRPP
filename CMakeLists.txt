@@ -9,6 +9,7 @@ option(OPT_BACKEND_ANDROID "Use the Android backend" OFF)
 option(OPT_OVERRIDE_STD_FILESYSTEM "Use a local version of std::filesystem on systems that don't have it yet" OFF)
 
 # Sources
+option(OPT_BUILD_TEST_SOURCE "Test source" ON)
 option(OPT_BUILD_AIRSPY_SOURCE "Build Airspy Source Module (Dependencies: libairspy)" ON)
 option(OPT_BUILD_AIRSPYHF_SOURCE "Build Airspy HF+ Source Module (Dependencies: libairspyhf)" ON)
 option(OPT_BUILD_AUDIO_SOURCE "Build Audio Source Module (Dependencies: rtaudio)" ON)
@@ -110,6 +111,10 @@ endif (ANDROID)
 add_subdirectory("core")
 
 # Source modules
+if (OPT_BUILD_TEST_SOURCE)
+add_subdirectory("source_modules/test_source")
+endif (OPT_BUILD_TEST_SOURCE)
+
 if (OPT_BUILD_AIRSPY_SOURCE)
 add_subdirectory("source_modules/airspy_source")
 endif (OPT_BUILD_AIRSPY_SOURCE)

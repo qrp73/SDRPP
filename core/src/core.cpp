@@ -163,6 +163,8 @@ int sdrpp_main(int argc, char* argv[]) {
     defConfig["menuWidth"] = 300;
 
     // Module instances
+    defConfig["moduleInstances"]["TEST Source"]["module"] = "test_source";
+    defConfig["moduleInstances"]["TEST Source"]["enabled"] = true;
     defConfig["moduleInstances"]["Airspy Source"]["module"] = "airspy_source";
     defConfig["moduleInstances"]["Airspy Source"]["enabled"] = true;
     defConfig["moduleInstances"]["AirspyHF+ Source"]["module"] = "airspyhf_source";
