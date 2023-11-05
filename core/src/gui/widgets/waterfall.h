@@ -99,7 +99,7 @@ namespace ImGui {
                 width = 524288;
             }
 
-            float factor = (float)width / (float)outWidth;
+            float factor = width / (double)outWidth;
             float sFactor = ceilf(factor);
             float uFactor;
             float id = offset;
@@ -107,10 +107,10 @@ namespace ImGui {
             int sId;
             for (int i = 0; i < outWidth; i++) {
                 maxVal = -INFINITY;
-                sId = (int)id;
+                sId = (int)(id + 0.5);
                 uFactor = (sId + sFactor > rawFFTSize) ? sFactor - ((sId + sFactor) - rawFFTSize) : sFactor;
-                for (int j = 0; j < uFactor; j++) {
-                    if (data[sId + j] > maxVal) { maxVal = data[sId + j]; }
+                for (int j = sId; j < sId+uFactor; j++) {
+                    if (data[j] > maxVal) { maxVal = data[j]; }
                 }
                 out[i] = maxVal;
                 id += factor;
