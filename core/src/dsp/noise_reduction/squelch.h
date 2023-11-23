@@ -36,7 +36,7 @@ namespace dsp::noise_reduction {
             volk_32f_accumulator_s32f(&sum, normBuffer, count);
             sum /= (float)count;
             
-            auto level = 10.0f * log10f(sum);
+            auto level = 20.0f * log10f(sum);
             static int cnt = 0;
             if (_isMute) { 
                 if (level < _level || cnt <= 0) {
