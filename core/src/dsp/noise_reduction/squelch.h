@@ -35,8 +35,24 @@ namespace dsp::noise_reduction {
             volk_32fc_magnitude_32f(normBuffer, (lv_32fc_t*)in, count);
             volk_32f_accumulator_s32f(&sum, normBuffer, count);
             sum /= (float)count;
+            
+            auto level = 10.0f * log10f(sum);
+            static int cnt = 0;
+            if (_isMute) { 
+                if (level < _level || cnt <= 0) {
+                    cnt = 10;   // 100 ms check before unmute
+                } else if (--cnt == 0) {
+                    _isMute = false;
+                }
+            } else {
+                // hysteresis 1 dB
+                if (level < (_level-1.0f)) {
+                    cnt = 0;
+                    _isMute = true;
+                }
+            }
 
-            if (10.0f * log10f(sum) >= _level) {
+            if (!_isMute) {
                 memcpy(out, in, count * sizeof(complex_t));
             }
             else {
@@ -59,7 +75,8 @@ namespace dsp::noise_reduction {
 
     private:
         float* normBuffer;
-        float _level = -50.0f;
+        float _level  = -50.0f;
+        bool  _isMute = false;
                 
     };
 }
