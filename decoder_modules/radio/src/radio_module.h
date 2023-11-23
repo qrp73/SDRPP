@@ -255,7 +255,7 @@ private:
         if (!_this->squelchEnabled && _this->enabled) { style::beginDisabled(); }
         ImGui::SameLine();
         ImGui::SetNextItemWidth(menuWidth - ImGui::GetCursorPosX());
-        if (ImGui::SliderFloat(("##_radio_sqelch_lvl_" + _this->name).c_str(), &_this->squelchLevel, _this->MIN_SQUELCH, _this->MAX_SQUELCH, "%.3fdB")) {
+        if (ImGui::SliderInt(("##_radio_sqelch_lvl_" + _this->name).c_str(), &_this->squelchLevel, _this->MIN_SQUELCH, _this->MAX_SQUELCH, "%d dB")) {
             _this->setSquelchLevel(_this->squelchLevel);
         }
         if (!_this->squelchEnabled && _this->enabled) { style::endDisabled(); }
@@ -678,7 +678,7 @@ private:
     bool postProcEnabled;
 
     bool squelchEnabled = false;
-    float squelchLevel;
+    int squelchLevel;
 
     int deempId = 0;
     bool deempAllowed;
