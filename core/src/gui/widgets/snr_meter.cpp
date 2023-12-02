@@ -78,11 +78,11 @@ namespace ImGui {
             window->DrawList->AddText(min + ImVec2(roundf(((float)i * it) - (sz.x / 2.0)) + 1, 16.0f * style::uiScale), text, buf);
         }
         
-        sprintf(buf, "%+.1f dB", levelMax);
+        sprintf(buf, "%+.2f dB", levelMax);
         ImVec2 sz = ImGui::CalcTextSize(buf);
         window->DrawList->AddText(min + ImVec2(size.x-sz.x+25*style::uiScale, 0), text, buf);
         
-        sprintf(buf, "%.1f dB", snr);
+        sprintf(buf, "%.0f dB", snr);
         sz = ImGui::CalcTextSize(buf);
         window->DrawList->AddText(min + ImVec2(size.x-sz.x+25*style::uiScale, sz.y), text, buf);
     }
