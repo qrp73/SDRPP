@@ -893,15 +893,27 @@ namespace ImGui {
         }
 
         if (selectedVFO != "" && vfos.size() > 0) {
-            float dummy;
             if (snrSmoothing) {
                 float newSNR = 0.0f;
-                calculateVFOSignalInfo(waterfallVisible ? &rawFFTs[currentFFTLine * rawFFTSize] : rawFFTs, vfos[selectedVFO], dummy, newSNR);
-                selectedVFOSNR = (snrSmoothingBeta*selectedVFOSNR) + (snrSmoothingAlpha*newSNR);
+                calculateVFOSignalInfo(waterfallVisible ? &rawFFTs[currentFFTLine * rawFFTSize] : rawFFTs, vfos[selectedVFO], selectedVFO_Level, newSNR);
+                selectedVFO_SNR = (snrSmoothingBeta*selectedVFO_SNR) + (snrSmoothingAlpha*newSNR);
             }
             else {
-                calculateVFOSignalInfo(waterfallVisible ? &rawFFTs[currentFFTLine * rawFFTSize] : rawFFTs, vfos[selectedVFO], dummy, selectedVFOSNR);
+                calculateVFOSignalInfo(waterfallVisible ? &rawFFTs[currentFFTLine * rawFFTSize] : rawFFTs, vfos[selectedVFO], selectedVFO_Level, selectedVFO_SNR);
             }
+        
+            // update level max
+            selectedVFO_LevelHistory.push(selectedVFO_Level);
+            if (selectedVFO_LevelHistory.size() > 10) {
+                selectedVFO_LevelHistory.pop();
+            }
+            float maxValue = -std::numeric_limits<float>::infinity();
+            std::queue<float> temp = selectedVFO_LevelHistory;
+            while (!temp.empty()) {
+                maxValue = std::max(maxValue, temp.front());
+                temp.pop();
+            }
+            selectedVFO_LevelMax = maxValue;
         }
 
         // If FFT hold is enabled, update it

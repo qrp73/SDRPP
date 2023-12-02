@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <queue>
 #include <mutex>
 #include <gui/widgets/bandplan.h>
 #include <imgui/imgui.h>
@@ -188,7 +189,11 @@ namespace ImGui {
         bool mouseInFFT = false;
         bool mouseInWaterfall = false;
 
-        float selectedVFOSNR = 0.0f;
+        float selectedVFO_SNR = 0.0f;
+        float selectedVFO_Level = 0.0f;
+        float selectedVFO_LevelMax = 0.0f;
+        std::queue<float> selectedVFO_LevelHistory;
+
 
         bool centerFrequencyLocked = false;
 

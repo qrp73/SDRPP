@@ -413,7 +413,11 @@ void MainWindow::draw() {
     ImGui::SetCursorPosX(snrPos);
     ImGui::SetCursorPosY(origY + (5.0f * style::uiScale));
     ImGui::SetNextItemWidth(snrWidth);
-    ImGui::SNRMeter((vfo != NULL) ? gui::waterfall.selectedVFOSNR : 0);
+    //ImGui::SNRMeter((vfo != NULL) ? gui::waterfall.selectedVFO_SNR : 0);
+    if (vfo != NULL)
+        ImGui::LevelMeter(gui::waterfall.selectedVFO_Level, gui::waterfall.selectedVFO_LevelMax, gui::waterfall.selectedVFO_SNR);
+    else
+        ImGui::LevelMeter(0, 0, 0);
 
     // Note: this is what makes the vertical size correct, needs to be fixed
     ImGui::SameLine();
