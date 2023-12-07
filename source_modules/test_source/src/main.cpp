@@ -150,6 +150,7 @@ public:
             defRates.push_back({{"id", 7}, {"value", 960000},  {"text", "960 000"}});
             defRates.push_back({{"id", 8}, {"value", 1000000}, {"text", "1 000 000"}});
             defRates.push_back({{"id", 9}, {"value", 1048576}, {"text", "1 048 576"}});
+            defRates.push_back({{"id", 10}, {"value", 2400000}, {"text", "2 400 000"}});
             config.acquire();
             config.conf["sampleRates"] = defRates;
             config.release(true);
@@ -322,6 +323,7 @@ private:
     }
     
     static void worker(void* ctx) {
+        flog::info("TestSource: start");
         TestSourceModule* _this = (TestSourceModule*)ctx;
         int blockSize = std::min((int)(_this->_sampleRate/200), (int)STREAM_BUFFER_SIZE);
         blockSize = std::max(1, blockSize);
