@@ -52,7 +52,7 @@ inline void printAndScale(double freq, char* buf) {
         sprintf(buf, "%.6g", freq);
     }
     else if (freqAbs < 1000000) {
-        sprintf(buf, "%.6lgK", freq / 1000.0);
+        sprintf(buf, "%.6lgk", freq / 1000.0);
     }
     else if (freqAbs < 1000000000) {
         sprintf(buf, "%.6lgM", freq / 1000000.0);

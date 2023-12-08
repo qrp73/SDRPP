@@ -29,10 +29,10 @@ public:
         this->name = name;
 
         // Define samplerates
-        samplerates.define(48000, "48KHz", hermes::HL_SAMP_RATE_48KHZ);
-        samplerates.define(96000, "96KHz", hermes::HL_SAMP_RATE_96KHZ);
-        samplerates.define(192000, "192KHz", hermes::HL_SAMP_RATE_192KHZ);
-        samplerates.define(384000, "384KHz", hermes::HL_SAMP_RATE_384KHZ);
+        samplerates.define(48000, "48kHz", hermes::HL_SAMP_RATE_48KHZ);
+        samplerates.define(96000, "96kHz", hermes::HL_SAMP_RATE_96KHZ);
+        samplerates.define(192000, "192kHz", hermes::HL_SAMP_RATE_192KHZ);
+        samplerates.define(384000, "384kHz", hermes::HL_SAMP_RATE_384KHZ);
 
         srId = samplerates.keyId(384000);
 

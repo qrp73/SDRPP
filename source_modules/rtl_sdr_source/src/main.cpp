@@ -39,7 +39,7 @@ const double sampleRates[] = {
 };
 
 const char* sampleRatesTxt[] = {
-    "250KHz",
+    "250kHz",
     "1.024MHz",
     "1.536MHz",
     "1.792MHz",
@@ -255,7 +255,7 @@ private:
             sprintf(buf, "%.1lfMHz", bw / 1000000.0);
         }
         else if (bw >= 1000.0) {
-            sprintf(buf, "%.1lfKHz", bw / 1000.0);
+            sprintf(buf, "%.1lfkHz", bw / 1000.0);
         }
         else {
             sprintf(buf, "%.1lfHz", bw);

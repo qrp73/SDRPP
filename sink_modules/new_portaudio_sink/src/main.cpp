@@ -250,13 +250,13 @@ private:
                 dev.sampleRatesTxt += buffer;
                 dev.sampleRatesTxt += '\0';
 
-                // Save ID of the default sample rate and 48KHz
+                // Save ID of the default sample rate and 48kHz
                 if (sr == dev.deviceInfo->defaultSampleRate) { dev.defaultSrId = srId; }
                 if (sr == 48000.0) { _48kId = srId; }
                 srId++;
             }
 
-            // If a 48KHz option was found, use it instead of the default
+            // If a 48kHz option was found, use it instead of the default
             if (_48kId >= 0) { dev.defaultSrId = _48kId; }
 
             std::string apiName = dev.hostApiInfo->name;

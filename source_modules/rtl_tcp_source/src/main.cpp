@@ -27,7 +27,7 @@ public:
         this->name = name;
 
         // Define samplerates
-        samplerates.define(250e3, "250KHz", 250e3);
+        samplerates.define(250e3, "250kHz", 250e3);
         samplerates.define(1.024e6, "1.024MHz", 1.024e6);
         samplerates.define(1.536e6, "1.536MHz", 1.536e6);
         samplerates.define(1.792e6, "1.792MHz", 1.792e6);

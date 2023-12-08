@@ -26,7 +26,7 @@ namespace utils {
                     break;
                 }
             }
-            return std::string(str).substr(0, len + 1) + "KHz";
+            return std::string(str).substr(0, len + 1) + "kHz";
         }
         else {
             sprintf(str, "%.06lf", freq);

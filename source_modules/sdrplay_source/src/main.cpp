@@ -56,9 +56,9 @@ sdrplay_api_Bw_MHzT bandwidths[] = {
 };
 
 const char* bandwidthsTxt =
-    "200KHz\0"
-    "300KHz\0"
-    "600KHz\0"
+    "200kHz\0"
+    "300kHz\0"
+    "600kHz\0"
     "1.536MHz\0"
     "5MHz\0"
     "6MHz\0"
@@ -113,12 +113,12 @@ ifMode_t ifModes[] = {
 
 const char* ifModeTxt =
     "ZeroIF\0"
-    "LowIF 2048KHz, IFBW 1536KHz\0"
-    "LowIF 2048KHz, IFBW 5000KHz\0"
-    "LowIF 1620KHz, IFBW 1536KHz\0"
-    "LowIF 450KHz, IFBW 600KHz\0"
-    "LowIF 450KHz, IFBW 300KHz\0"
-    "LowIF 450KHz, IFBW 200KHz\0";
+    "LowIF 2048kHz, IFBW 1536kHz\0"
+    "LowIF 2048kHz, IFBW 5000kHz\0"
+    "LowIF 1620kHz, IFBW 1536kHz\0"
+    "LowIF 450kHz, IFBW 600kHz\0"
+    "LowIF 450kHz, IFBW 300kHz\0"
+    "LowIF 450kHz, IFBW 200kHz\0";
 
 const char* rspduo_antennaPortsTxt = "Tuner 1 (50Ohm)\0Tuner 1 (Hi-Z)\0Tuner 2 (50Ohm)\0";
 
@@ -511,7 +511,7 @@ private:
             sprintf(buf, "%.1lfMHz", bw / 1000000.0);
         }
         else if (bw >= 1000.0) {
-            sprintf(buf, "%.1lfKHz", bw / 1000.0);
+            sprintf(buf, "%.1lfkHz", bw / 1000.0);
         }
         else {
             sprintf(buf, "%.1lfHz", bw);
