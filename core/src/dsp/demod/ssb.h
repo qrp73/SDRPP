@@ -104,15 +104,12 @@ namespace dsp::demod {
 
     protected:
         double getTranslation() {
-            if (_mode == Mode::USB) {
-                return _bandwidth / 2.0;
+            switch(_mode) {
+                case Mode::USB: return _bandwidth / 2.0;
+                case Mode::LSB: return -_bandwidth / 2.0;
+                case Mode::DSB: return 0.0;
             }
-            else if (_mode == Mode::LSB) {
-                return -_bandwidth / 2.0;
-            }
-            else if (_mode == Mode::DSB) {
-                return 0.0;
-            }
+            return 0.0;
         }
 
         Mode _mode;

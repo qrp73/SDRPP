@@ -257,6 +257,7 @@ namespace net::http {
 
         // Deserialize
         req.deserialize(respData);
+        return 0;
     }
 
     int Client::sendResponseHeader(ResponseHeader& resp) {
@@ -274,6 +275,7 @@ namespace net::http {
 
         // Deserialize
         resp.deserialize(respData);
+        return 0;
     }
 
     int Client::sendChunkHeader(ChunkHeader& chdr) {

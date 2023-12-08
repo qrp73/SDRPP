@@ -120,7 +120,7 @@ public:
 
 #ifndef __ANDROID__
         devCount = rtlsdr_get_device_count();
-        char buf[1024];
+        char buf[2048];
         char snBuf[1024];
         for (int i = 0; i < devCount; i++) {
             // Gather device info

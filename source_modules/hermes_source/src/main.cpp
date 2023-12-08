@@ -76,7 +76,7 @@ public:
 private:
     void refresh() {
         char mac[128];
-        char buf[128];
+        char buf[256];
         devices.clear();
         auto devList = hermes::discover();
         for (auto& d : devList) {
