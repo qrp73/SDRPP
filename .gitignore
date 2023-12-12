@@ -1,6 +1,7 @@
 build/
 .vscode/
 .vs/
+.cache/
 .idea/
 *.old
 *.dll
