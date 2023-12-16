@@ -574,21 +574,18 @@ namespace ImGui {
         if (!waterfallVisible || rawFFTs == NULL) {
             return;
         }
-        double offsetRatio = viewOffset / (wholeBandwidth / 2.0);
-        int drawDataSize;
-        int drawDataStart;
+        const double offsetRatio = viewOffset / (wholeBandwidth / 2.0);
+        const float drawDataSize = (viewBandwidth / wholeBandwidth) * rawFFTSize;
+        const float drawDataStart = (((double)rawFFTSize / 2.0) * (offsetRatio + 1)) - (drawDataSize / 2);
         // TODO: Maybe put on the stack for faster alloc?
         float* tempData = new float[dataWidth];
-        float pixel;
-        float dataRange = waterfallMax - waterfallMin;
-        int count = std::min<float>(waterfallHeight, fftLines);
+        const float dataRange = waterfallMax - waterfallMin;
+        const int count = std::min<float>(waterfallHeight, fftLines);
         if (rawFFTs != NULL && fftLines >= 0) {
             for (int i = 0; i < count; i++) {
-                drawDataSize = (viewBandwidth / wholeBandwidth) * rawFFTSize;
-                drawDataStart = (((double)rawFFTSize / 2.0) * (offsetRatio + 1)) - (drawDataSize / 2);
                 doZoom(drawDataStart, drawDataSize, dataWidth, &rawFFTs[((i + currentFFTLine) % waterfallHeight) * rawFFTSize], tempData);
                 for (int j = 0; j < dataWidth; j++) {
-                    pixel = (std::clamp<float>(tempData[j], waterfallMin, waterfallMax) - waterfallMin) / dataRange;
+                    float pixel = (std::clamp<float>(tempData[j], waterfallMin, waterfallMax) - waterfallMin) / dataRange;
                     waterfallFb[(i * dataWidth) + j] = waterfallPallet[(int)(pixel * (WATERFALL_RESOLUTION - 1))];
                 }
             }
@@ -862,9 +859,9 @@ namespace ImGui {
     void WaterFall::pushFFT() {
         if (rawFFTs == NULL) { return; }
         std::lock_guard<std::recursive_mutex> lck(latestFFTMtx);
-        double offsetRatio = viewOffset / (wholeBandwidth / 2.0);
-        int drawDataSize = (viewBandwidth / wholeBandwidth) * rawFFTSize;
-        int drawDataStart = (((double)rawFFTSize / 2.0) * (offsetRatio + 1)) - (drawDataSize / 2);
+        const double offsetRatio = viewOffset / (wholeBandwidth / 2.0);
+        const float drawDataSize = (viewBandwidth / wholeBandwidth) * rawFFTSize;
+        const float drawDataStart = (((double)rawFFTSize / 2.0) * (offsetRatio + 1)) - (drawDataSize / 2);
 
         if (waterfallVisible) {
             doZoom(drawDataStart, drawDataSize, dataWidth, &rawFFTs[currentFFTLine * rawFFTSize], latestFFT);

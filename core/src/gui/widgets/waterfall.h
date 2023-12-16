@@ -91,31 +91,47 @@ namespace ImGui {
         float* getFFTBuffer();
         void pushFFT();
 
-        inline void doZoom(int offset, int width, int outWidth, float* data, float* out) {
+        inline void doZoom(float offset, float width, int outWidth, const float* data, float* out) {
             // NOTE: REMOVE THAT SHIT, IT'S JUST A HACKY FIX
             if (offset < 0) {
                 offset = 0;
             }
-            if (width > 524288) {
-                width = 524288;
+            if (width > 1048576) {
+                width = 1048576;
             }
 
-            float factor = width / (double)outWidth;
-            float sFactor = ceilf(factor);
-            float uFactor;
-            float id = offset;
-            float maxVal;
-            int sId;
-            for (int i = 0; i < outWidth; i++) {
-                maxVal = -INFINITY;
-                sId = (int)(id + 0.5);
-                uFactor = (sId + sFactor > rawFFTSize) ? sFactor - ((sId + sFactor) - rawFFTSize) : sFactor;
-                for (int j = sId; j < sId+uFactor; j++) {
-                    if (data[j] > maxVal) { maxVal = data[j]; }
+            double factor = width / float(outWidth);
+
+            //
+            // how many output pixels we can go before hitting
+            // the end of the FFT array
+            //
+            int k = (rawFFTSize - offset)*float(outWidth)/width;
+
+            if(k > outWidth)
+                k = outWidth;
+
+            if(factor <= 1.0) {
+                uint64_t S = uint64_t(double(width)*4294967296.0/double(outWidth));
+                uint64_t R = uint64_t((double(offset)+0.5)*4294967296.0);
+                
+                for(int i = 0; i < k; ++i, R += S) {
+                    *out++ = data[R >> 32];
                 }
-                out[i] = maxVal;
-                id += factor;
+            } else {
+                double id = offset + 0.5;
+                for (int i = 0; i < k; ++i) {
+                    double nid = id + factor;
+                    float maxVal = data[(int) id];
+
+                    while(++id < nid)
+                        maxVal = std::max(maxVal, data[(int) id]);
+                    *out++ = maxVal;
+                    id = nid;
+                }
             }
+            while(k++ < outWidth)
+                *out++ = -INFINITY;
         }
 
         void updatePallette(float colors[][3], int colorCount);
