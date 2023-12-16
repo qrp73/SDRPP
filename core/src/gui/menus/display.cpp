@@ -31,6 +31,7 @@ namespace displaymenu {
     OptionList<float, float> uiScales;
 
     const int FFTSizes[] = {
+        1048576,
         524288,
         262144,
         131072,
@@ -43,7 +44,8 @@ namespace displaymenu {
         1024
     };
 
-    const char* FFTSizesStr = "524288\0"
+    const char* FFTSizesStr = "1048576\0"
+                              "524288\0"
                               "262144\0"
                               "131072\0"
                               "65536\0"

@@ -607,10 +607,11 @@ void MainWindow::draw() {
     if (ImGui::VSliderFloat("##_7_", wfSliderSize, &bw, 1.0, 0.0, "")) {
         double factor = (double)bw * (double)bw;
 
-        // Map 0.0 -> 1.0 to 1000.0 -> bandwidth
+        const double minBandwidth = 100.0;
+        // Map 0.0 -> 1.0 to minBandwidth -> bandwidth
         double wfBw = gui::waterfall.getBandwidth();
-        double delta = wfBw - 1000.0;
-        double finalBw = std::min<double>(1000.0 + (factor * delta), wfBw);
+        double delta = wfBw - minBandwidth;
+        double finalBw = std::min<double>(minBandwidth + (factor * delta), wfBw);
 
         gui::waterfall.setViewBandwidth(finalBw);
         if (vfo != NULL) {
