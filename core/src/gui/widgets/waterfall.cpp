@@ -349,6 +349,8 @@ namespace ImGui {
             ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
             double deltax = drag.x - lastDrag;
             lastDrag = drag.x;
+            if (deltax == 0.0)
+                return;
             double viewDelta = deltax * (viewBandwidth / (double)dataWidth);
 
             viewOffset -= viewDelta;
