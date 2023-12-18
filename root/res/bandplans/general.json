@@ -6,13 +6,13 @@
     "author_url": "https://github.com/qrp73/SDRPP",
     "bands": [
         {
-            "name": "2200m LF Ham",
+            "name": "2200m Ham",
             "type": "amateur",
             "start": 135700,
             "end": 137800
         },
         {
-            "name": "1750m LF Ham",
+            "name": "1750m Ham",
             "type": "amateur",
             "start": 160000,
             "end": 190000
