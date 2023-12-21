@@ -106,7 +106,7 @@ namespace ImGui {
         double startFreq = ceilf(lowerFreq / range) * range;
         double horizScale = (double)dataWidth / viewBandwidth;
         float scaleVOfsset = 7 * style::uiScale;
-        for (double freq = startFreq; freq < upperFreq; freq += range) {
+        for (double freq = startFreq; freq <= upperFreq; freq += range) {
             double xPos = fftAreaMin.x + ((freq - lowerFreq) * horizScale);
             window->DrawList->AddLine(ImVec2(roundf(xPos), fftAreaMin.y + 1),
                                       ImVec2(roundf(xPos), fftAreaMax.y),
