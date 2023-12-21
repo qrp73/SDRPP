@@ -24,41 +24,28 @@ float DEFAULT_COLOR_MAP[][3] = {
     { 0x4A, 0x00, 0x00 }
 };
 
-// TODO: Fix this hacky BS
-
-double freq_ranges[] = {
-    1.0, 2.0, 2.5, 5.0,
-    10.0, 20.0, 25.0, 50.0,
-    100.0, 200.0, 250.0, 500.0,
-    1000.0, 2000.0, 2500.0, 5000.0,
-    10000.0, 20000.0, 25000.0, 50000.0,
-    100000.0, 200000.0, 250000.0, 500000.0,
-    1000000.0, 2000000.0, 2500000.0, 5000000.0,
-    10000000.0, 20000000.0, 25000000.0, 50000000.0
-};
-
 inline double findBestRange(double bandwidth, int maxSteps) {
-    for (int i = 0; i < 32; i++) {
-        if (bandwidth / freq_ranges[i] < (double)maxSteps) {
-            return freq_ranges[i];
-        }
+    double step = std::pow(10, std::floor(std::log10(bandwidth/maxSteps)));
+    for(int i = 0; i < 3; ++i) {
+        if(bandwidth/step <= maxSteps)
+            break;
+        step *= (i & 1) ? 2.5 : 2.0;
     }
-    return 50000000.0;
+    return step;
 }
 
-inline void printAndScale(double freq, char* buf) {
-    double freqAbs = fabs(freq);
+inline int printAndScale(char *buf, size_t maxlen, double freq) {
+    uint64_t freqAbs = fabs(freq);
     if (freqAbs < 1000) {
-        sprintf(buf, "%.6g", freq);
-    }
-    else if (freqAbs < 1000000) {
-        sprintf(buf, "%.6lgk", freq / 1000.0);
+        return snprintf(buf, maxlen, "%.9g", freq);
+    } else if (freqAbs < 1000000) {
+        return snprintf(buf, maxlen, "%.9lgk", freq / 1000.0);
     }
     else if (freqAbs < 1000000000) {
-        sprintf(buf, "%.6lgM", freq / 1000000.0);
+        return snprintf(buf, maxlen, "%.9lgM", freq / 1000000.0);
     }
-    else if (freqAbs < 1000000000000) {
-        sprintf(buf, "%.6lgG", freq / 1000000000.0);
+    else {
+        return snprintf(buf, maxlen, "%.9lgG", freq / 1000000000.0);
     }
 }
 
@@ -127,7 +114,7 @@ namespace ImGui {
             window->DrawList->AddLine(ImVec2(roundf(xPos), fftAreaMax.y),
                                       ImVec2(roundf(xPos), fftAreaMax.y + scaleVOfsset),
                                       text, style::uiScale);
-            printAndScale(freq, buf);
+            printAndScale(buf, sizeof(buf), freq);
             ImVec2 txtSz = ImGui::CalcTextSize(buf);
             window->DrawList->AddText(ImVec2(roundf(xPos - (txtSz.x / 2.0)), fftAreaMax.y + txtSz.y), text, buf);
         }
@@ -460,9 +447,9 @@ namespace ImGui {
 
                     if (ImGui::GetIO().KeyCtrl) {
                         ImGui::Separator();
-                        printAndScale(_vfo->generalOffset + centerFreq, buf);
+                        printAndScale(buf, sizeof(buf), _vfo->generalOffset + centerFreq);
                         ImGui::Text("Frequency: %sHz", buf);
-                        printAndScale(_vfo->bandwidth, buf);
+                        printAndScale(buf, sizeof(buf), _vfo->bandwidth);
                         ImGui::Text("Bandwidth: %sHz", buf);
                         ImGui::Text("Bandwidth Locked: %s", _vfo->bandwidthLocked ? "Yes" : "No");
 
