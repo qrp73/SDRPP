@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-FIRST: Before reporting any bug, make sure that the bug you are reporting has not been reported before. Also, try to use the [nightly version](https://www.sdrpp.org/nightly) if possible in case I've already fixed the bug.
+Before reporting any bug, please make sure that the bug you are reporting has not been reported before.
 
 **Hardware**
 - CPU: 
