@@ -13,13 +13,20 @@ Have good day and 73
 
 ## Features
 
+- fixed waterfall zoom
+- SNR meter replaced with level meter + level and SNR text indication 
 - unity gain for FFT and window functions
 - added Blackman-Harris-7, Blackman-Harris-4, Hamming and Hann window functions
+- added 1M FFT
 - fixed AM,FM,WFM,SSB,DSB bandwidth
+- fixed units misspelling
+- improved squelch to reduce false triggering
 - rtl_sdr_source: fixed sample conversion
 - hpsdr_source: added new module for HPSDR protocol enabled devices
 - file_source: code replaced with a new multi-format support (supported: FLOAT 32/64 bit and PCM 8/16/24/32 bit)
 - audio_source: added support for mono source, fixed error logging
+- recorder: fixed default filename pattern
+- recorder: added 24-bit PCM support
 - some minor fixes
 
 
