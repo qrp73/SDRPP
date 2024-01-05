@@ -611,10 +611,12 @@ private:
         FrequencyManagerModule* _this = (FrequencyManagerModule*)ctx;
         if (_this->bookmarkDisplayMode == BOOKMARK_DISP_MODE_OFF) { return; }
 
+        auto argsCenterX = (args.min.x+args.max.x)/2;
+        auto argsCenterFreq = (args.lowFreq+args.highFreq)/2;
+
         if (_this->bookmarkDisplayMode == BOOKMARK_DISP_MODE_TOP) {
             for (auto const bm : _this->waterfallBookmarks) {
-                double centerXpos = args.min.x + std::round((bm.bookmark.frequency - args.lowFreq) * args.freqToPixelRatio);
-
+                double centerXpos = std::round(argsCenterX + (bm.bookmark.frequency - argsCenterFreq) * args.freqToPixelRatio);
 
                 ImVec2 nameSize = ImGui::CalcTextSize(bm.bookmarkName.c_str());
                 ImVec2 rectMin = ImVec2(centerXpos - (nameSize.x / 2) - 5, args.min.y);
@@ -635,7 +637,7 @@ private:
         }
         else if (_this->bookmarkDisplayMode == BOOKMARK_DISP_MODE_BOTTOM) {
             for (auto const bm : _this->waterfallBookmarks) {
-                double centerXpos = args.min.x + std::round((bm.bookmark.frequency - args.lowFreq) * args.freqToPixelRatio);
+                double centerXpos = std::round(argsCenterX + (bm.bookmark.frequency - argsCenterFreq) * args.freqToPixelRatio);
 
                 ImVec2 nameSize = ImGui::CalcTextSize(bm.bookmarkName.c_str());
                 ImVec2 rectMin = ImVec2(centerXpos - (nameSize.x / 2) - 5, args.max.y - nameSize.y);
