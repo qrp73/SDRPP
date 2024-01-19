@@ -27,6 +27,7 @@ Have good day and 73
 - audio_source: added support for mono source, fixed error logging
 - recorder: fixed default filename pattern
 - recorder: added 24-bit PCM support
+- frequency_manager: fixed jittery label position
 - some minor fixes
 
 
