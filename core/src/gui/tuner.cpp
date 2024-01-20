@@ -48,7 +48,7 @@ namespace tuner {
         double top = (BW / 2.0);
 
         // VFO still fints in the view
-        if (vfoBottom > viewBottom && vfoTop < viewTop) {
+        if (vfoBottom >= viewBottom && vfoTop <= viewTop) {
             sigpath::vfoManager.setCenterOffset(vfoName, newVFO);
             return;
         }
@@ -75,10 +75,10 @@ namespace tuner {
 
         // VFO is still without the SDR's bandwidth
         if (delta < 0) {
-            double newViewOff = vfoTop - (viewBW / 2.0) + (viewBW / 10.0);
+            double newViewOff = vfoBW >= viewBW ? newVFO : vfoTop - (viewBW / 2.0);
             double newViewBottom = newViewOff - (viewBW / 2.0);
 
-            if (newViewBottom > bottom) {
+            if (newViewBottom - (viewBW / 10.0) >= bottom) {
                 gui::waterfall.setViewOffset(newViewOff);
                 sigpath::vfoManager.setCenterOffset(vfoName, newVFO);
                 return;
@@ -89,12 +89,11 @@ namespace tuner {
             sigpath::vfoManager.setCenterOffset(vfoName, newVFOOffset);
             gui::waterfall.setCenterFrequency(freq - newVFOOffset);
             sigpath::sourceManager.tune(freq - newVFOOffset);
-        }
-        else {
-            double newViewOff = vfoBottom + (viewBW / 2.0) - (viewBW / 10.0);
+        } else {
+            double newViewOff = vfoBW >= viewBW ? newVFO : vfoBottom + (viewBW / 2.0);
             double newViewTop = newViewOff + (viewBW / 2.0);
 
-            if (newViewTop < top) {
+            if (newViewTop + (viewBW / 10.0) <= top) {
                 gui::waterfall.setViewOffset(newViewOff);
                 sigpath::vfoManager.setCenterOffset(vfoName, newVFO);
                 return;
