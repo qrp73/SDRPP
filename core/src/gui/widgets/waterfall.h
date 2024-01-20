@@ -119,7 +119,7 @@ namespace ImGui {
                     *out++ = data[R >> 32];
                 }
             } else {
-                double id = offset + 0.5;
+                double id = offset;
                 for (int i = 0; i < k; ++i) {
                     double nid = id + factor;
                     float maxVal = data[(int) id];
