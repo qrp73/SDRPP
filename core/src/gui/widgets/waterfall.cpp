@@ -123,27 +123,29 @@ namespace ImGui {
 
         // Data
         if (latestFFT != NULL && fftLines != 0) {
+            double aPos = fftAreaMax.y - ((latestFFT[0] - fftMin) * scaleFactor);
+            aPos = std::clamp<double>(aPos, fftAreaMin.y + 1, fftAreaMax.y);
             for (int i = 1; i < dataWidth; i++) {
-                double aPos = fftAreaMax.y - ((latestFFT[i - 1] - fftMin) * scaleFactor);
                 double bPos = fftAreaMax.y - ((latestFFT[i] - fftMin) * scaleFactor);
-                aPos = std::clamp<double>(aPos, fftAreaMin.y + 1, fftAreaMax.y);
                 bPos = std::clamp<double>(bPos, fftAreaMin.y + 1, fftAreaMax.y);
                 window->DrawList->AddLine(ImVec2(fftAreaMin.x + i - 1, roundf(aPos)),
                                           ImVec2(fftAreaMin.x + i, roundf(bPos)), trace, 1.0);
                 window->DrawList->AddLine(ImVec2(fftAreaMin.x + i, roundf(bPos)),
                                           ImVec2(fftAreaMin.x + i, fftAreaMax.y), shadow, 1.0);
+                aPos = bPos;
             }
         }
 
         // Hold
         if (fftHold && latestFFT != NULL && latestFFTHold != NULL && fftLines != 0) {
+            double aPos = fftAreaMax.y - ((latestFFTHold[0] - fftMin) * scaleFactor);
+            aPos = std::clamp<double>(aPos, fftAreaMin.y + 1, fftAreaMax.y);
             for (int i = 1; i < dataWidth; i++) {
-                double aPos = fftAreaMax.y - ((latestFFTHold[i - 1] - fftMin) * scaleFactor);
                 double bPos = fftAreaMax.y - ((latestFFTHold[i] - fftMin) * scaleFactor);
-                aPos = std::clamp<double>(aPos, fftAreaMin.y + 1, fftAreaMax.y);
                 bPos = std::clamp<double>(bPos, fftAreaMin.y + 1, fftAreaMax.y);
                 window->DrawList->AddLine(ImVec2(fftAreaMin.x + i - 1, roundf(aPos)),
                                           ImVec2(fftAreaMin.x + i, roundf(bPos)), traceHold, 1.0);
+                aPos = bPos;
             }
         }
 
