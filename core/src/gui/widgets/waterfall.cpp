@@ -121,6 +121,26 @@ namespace ImGui {
             window->DrawList->AddText(ImVec2(roundf(xPos - (txtSz.x / 2.0)), fftAreaMax.y + txtSz.y), text, buf);
         }
 
+        // LO position
+        if (centerFreq >= lowerFreq && centerFreq <= upperFreq) {
+            auto xPos = fftAreaMin.x + ((centerFreq - lowerFreq) * horizScale);
+            auto x = roundf(xPos);
+            auto y = roundf(fftAreaMax.y) + 1;
+            window->DrawList->AddLine(ImVec2(x-4,   y+4),
+                                      ImVec2(x+1,   y-1),
+                                      IM_COL32(255, 0, 0, 255), style::uiScale);
+            window->DrawList->AddLine(ImVec2(x,     y),
+                                      ImVec2(x+4+1, y+4+1),
+                                      IM_COL32(255, 0, 0, 255), style::uiScale);
+            y = roundf(fftAreaMin.y) - 1;
+            window->DrawList->AddLine(ImVec2(x-4,   y-4),
+                                      ImVec2(x+1,   y+1),
+                                      IM_COL32(255, 0, 0, 255), style::uiScale);
+            window->DrawList->AddLine(ImVec2(x,     y),
+                                      ImVec2(x+4+1, y-4-1),
+                                      IM_COL32(255, 0, 0, 255), style::uiScale);
+        }
+
         // Data
         if (latestFFT != NULL && fftLines != 0) {
             double aPos = fftAreaMax.y - ((latestFFT[0] - fftMin) * scaleFactor);
