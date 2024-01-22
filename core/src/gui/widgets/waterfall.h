@@ -91,49 +91,6 @@ namespace ImGui {
         float* getFFTBuffer();
         void pushFFT();
 
-        inline void doZoom(float offset, float width, int outWidth, const float* data, float* out) {
-            // NOTE: REMOVE THAT SHIT, IT'S JUST A HACKY FIX
-            if (offset < 0) {
-                offset = 0;
-            }
-            if (width > 1048576) {
-                width = 1048576;
-            }
-
-            double factor = width / float(outWidth);
-
-            //
-            // how many output pixels we can go before hitting
-            // the end of the FFT array
-            //
-            int k = (rawFFTSize - offset)*float(outWidth)/width;
-
-            if(k > outWidth)
-                k = outWidth;
-
-            if(factor <= 1.0) {
-                uint64_t S = uint64_t(double(width)*4294967296.0/double(outWidth));
-                uint64_t R = uint64_t((double(offset)+0.5)*4294967296.0);
-                
-                for(int i = 0; i < k; ++i, R += S) {
-                    *out++ = data[R >> 32];
-                }
-            } else {
-                double id = offset;
-                for (int i = 0; i < k; ++i) {
-                    double nid = id + factor;
-                    float maxVal = data[(int) id];
-
-                    while(++id < nid)
-                        maxVal = std::max(maxVal, data[(int) id]);
-                    *out++ = maxVal;
-                    id = nid;
-                }
-            }
-            while(k++ < outWidth)
-                *out++ = -INFINITY;
-        }
-
         void updatePallette(float colors[][3], int colorCount);
         void updatePalletteFromArray(float* colors, int colorCount);
 

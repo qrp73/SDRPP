@@ -7,6 +7,8 @@
 #include <utils/flog.h>
 #include <gui/gui.h>
 #include <gui/style.h>
+#include "fft_scaler.h"
+
 
 float DEFAULT_COLOR_MAP[][3] = {
     { 0x00, 0x00, 0x20 },
@@ -563,16 +565,14 @@ namespace ImGui {
         if (!waterfallVisible || rawFFTs == NULL) {
             return;
         }
-        const double offsetRatio = viewOffset / (wholeBandwidth / 2.0);
-        const float drawDataSize = (viewBandwidth / wholeBandwidth) * rawFFTSize;
-        const float drawDataStart = (((double)rawFFTSize / 2.0) * (offsetRatio + 1)) - (drawDataSize / 2);
         // TODO: Maybe put on the stack for faster alloc?
         float* tempData = new float[dataWidth];
         const float dataRange = waterfallMax - waterfallMin;
         const int count = std::min<float>(waterfallHeight, fftLines);
         if (rawFFTs != NULL && fftLines >= 0) {
+            fft_scaler scaler(viewOffset, viewBandwidth, wholeBandwidth, rawFFTSize, dataWidth);
             for (int i = 0; i < count; i++) {
-                doZoom(drawDataStart, drawDataSize, dataWidth, &rawFFTs[((i + currentFFTLine) % waterfallHeight) * rawFFTSize], tempData);
+                scaler.doZoom(&rawFFTs[((i + currentFFTLine) % waterfallHeight) * rawFFTSize], tempData);
                 for (int j = 0; j < dataWidth; j++) {
                     float pixel = (std::clamp<float>(tempData[j], waterfallMin, waterfallMax) - waterfallMin) / dataRange;
                     waterfallFb[(i * dataWidth) + j] = waterfallPallet[(int)(pixel * (WATERFALL_RESOLUTION - 1))];
@@ -848,12 +848,10 @@ namespace ImGui {
     void WaterFall::pushFFT() {
         if (rawFFTs == NULL) { return; }
         std::lock_guard<std::recursive_mutex> lck(latestFFTMtx);
-        const double offsetRatio = viewOffset / (wholeBandwidth / 2.0);
-        const float drawDataSize = (viewBandwidth / wholeBandwidth) * rawFFTSize;
-        const float drawDataStart = (((double)rawFFTSize / 2.0) * (offsetRatio + 1)) - (drawDataSize / 2);
 
+        fft_scaler scaler(viewOffset, viewBandwidth, wholeBandwidth, rawFFTSize, dataWidth);
         if (waterfallVisible) {
-            doZoom(drawDataStart, drawDataSize, dataWidth, &rawFFTs[currentFFTLine * rawFFTSize], latestFFT);
+            scaler.doZoom(&rawFFTs[currentFFTLine * rawFFTSize], latestFFT);
             memmove(&waterfallFb[dataWidth], waterfallFb, dataWidth * (waterfallHeight - 1) * sizeof(uint32_t));
             float pixel;
             float dataRange = waterfallMax - waterfallMin;
@@ -865,7 +863,7 @@ namespace ImGui {
             waterfallUpdate = true;
         }
         else {
-            doZoom(drawDataStart, drawDataSize, dataWidth, rawFFTs, latestFFT);
+            scaler.doZoom(rawFFTs, latestFFT);
             fftLines = 1;
         }
 
