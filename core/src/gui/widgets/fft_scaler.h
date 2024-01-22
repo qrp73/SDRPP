@@ -28,7 +28,7 @@ public:
         _outSize = outSize;
         const double offsetRatio = viewOffset / (wholeBandwidth / 2.0);
         double width = (viewBandwidth / wholeBandwidth) * fftSize;
-        _offset = (((double)fftSize / 2.0) * (offsetRatio + 1)) - (width / 2) + 0.5;
+        _offset = (((double)fftSize / 2.0) * (offsetRatio + 1)) - (width / 2);
         if (_offset < 0) {
             _offset = 0;
         }
@@ -43,21 +43,22 @@ public:
         if(_factor <= 1.0) {
             for (auto i = 0; i < _outSize; i++) {
                 auto f1 = f0 + _factor;
-                auto i0 = (int)f0;
+                auto i0 = (int)roundf(f0);
                 *out++ = data[i0];
                 f0 = f1;
             }
         } else {
+            auto i0 = (int)roundf(f0);
             for (auto i = 0; i < _outSize; i++) {
                 auto f1 = f0 + _factor;
-                auto i0 = (int)f0;
-                auto i1 = (int)f1;
+                auto i1 = (int)roundf(f1);
                 auto maxVal = data[i0];
                 for (auto j=i0+1; j < i1; j++) {
                     maxVal = std::max(maxVal, data[j]);
                 }
                 *out++ = maxVal;
                 f0 = f1;
+                i0 = i1;
             }
         }
     }
