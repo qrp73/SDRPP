@@ -373,7 +373,7 @@ namespace hpsdr {
     }
 
     std::vector<Info> discover() {
-        auto sock = net::openudp("0.0.0.0", 1024);
+        auto sock = net::openudp("0.0.0.0", 1024, "0.0.0.0", 0, true);
         
         // Build discovery packet
         // <0xEFFE><0x02><60 bytes of 0x00>
@@ -427,6 +427,8 @@ namespace hpsdr {
             devices.push_back(info);
         }
         
+        // Close broadcast socket
+        sock->close(); 
 
         return devices;
     }

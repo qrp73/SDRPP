@@ -86,14 +86,14 @@ namespace net {
         addr.sin_port = htons(port);
     }
 
-    std::string Address::getIPStr() {
+    std::string Address::getIPStr() const {
         char buf[128];
         IP_t ip = getIP();
         sprintf(buf, "%d.%d.%d.%d", (ip >> 24) & 0xFF, (ip >> 16) & 0xFF, (ip >> 8) & 0xFF, ip & 0xFF);
         return buf;
     }
 
-    IP_t Address::getIP() {
+    IP_t Address::getIP() const {
         return htonl(addr.sin_addr.s_addr);
     }
 
@@ -101,7 +101,7 @@ namespace net {
         addr.sin_addr.s_addr = htonl(ip);
     }
 
-    int Address::getPort() {
+    int Address::getPort() const {
         return htons(addr.sin_port);
     }
 
@@ -161,7 +161,7 @@ namespace net {
                 // Set timeout
                 timeval tv;
                 tv.tv_sec = timeout / 1000;
-                tv.tv_usec = (timeout-tv.tv_sec*1000) * 1000;
+                tv.tv_usec = (timeout - tv.tv_sec*1000) * 1000;
 
                 // Wait for data
                 int err = select(sock+1, &set, NULL, &set, (timeout > 0) ? &tv : NULL);
@@ -226,7 +226,7 @@ namespace net {
         // Define timeout
         timeval tv;
         tv.tv_sec = timeout / 1000;
-        tv.tv_usec = (timeout-tv.tv_sec*1000) * 1000;
+        tv.tv_usec = (timeout - tv.tv_sec*1000) * 1000;
 
         // Wait for data or error
         if (timeout != NONBLOCKING) {
@@ -375,25 +375,32 @@ namespace net {
         return connect(Address(host, port));
     }
 
-    std::shared_ptr<Socket> openudp(const Address& raddr, const Address& laddr) {
+    std::shared_ptr<Socket> openudp(const Address& raddr, const Address& laddr, bool isBroadcast) {
         // Init library if needed
         init();
 
         // Create socket
         SockHandle_t s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-		// TODO: allow caller to setup required options
-
+        // If the remote address is multicast, allow multicast connections
+#ifdef _WIN32
+        const char broadcastEnable = isBroadcast ? 1 : 0;
+#else
+        int broadcastEnable = isBroadcast ? 1 : 0;
+#endif
         // set option SO_BROADCAST
-        int broadcastEnable = 1;
         if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, &broadcastEnable, sizeof(broadcastEnable)) == -1) {
             closeSocket(s);
             throw std::runtime_error("Could not set SO_BROADCAST option");
             return NULL;
         }
+#ifdef _WIN32
+        const char reuseAddrEnable = 1;
+#else
+        int reuseAddrEnable = 1;
+#endif
         // set option SO_REUSEADDR
-        int reuseEnable = 1;
-        if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &reuseEnable, sizeof(reuseEnable)) == -1) {
+        if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &reuseAddrEnable, sizeof(reuseAddrEnable)) == -1) {
             closeSocket(s);
             throw std::runtime_error("Could not set SO_REUSEADDR option");
             return NULL;
@@ -417,15 +424,15 @@ namespace net {
         return std::make_shared<Socket>(s, &raddr);
     }
 
-    std::shared_ptr<Socket> openudp(std::string rhost, int rport, const Address& laddr) {
-        return openudp(Address(rhost, rport), laddr);
+    std::shared_ptr<Socket> openudp(std::string rhost, int rport, const Address& laddr, bool isBroadcast) {
+        return openudp(Address(rhost, rport), laddr, isBroadcast);
     }
 
-    std::shared_ptr<Socket> openudp(const Address& raddr, std::string lhost, int lport) {
-        return openudp(raddr, Address(lhost, lport));
+    std::shared_ptr<Socket> openudp(const Address& raddr, std::string lhost, int lport, bool isBroadcast) {
+        return openudp(raddr, Address(lhost, lport), isBroadcast);
     }
 
-    std::shared_ptr<Socket> openudp(std::string rhost, int rport, std::string lhost, int lport) {
-        return openudp(Address(rhost, rport), Address(lhost, lport));
+    std::shared_ptr<Socket> openudp(std::string rhost, int rport, std::string lhost, int lport, bool isBroadcast) {
+        return openudp(Address(rhost, rport), Address(lhost, lport), isBroadcast);
     }
 }
