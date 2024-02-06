@@ -62,7 +62,7 @@ void IQFrontEnd::init(dsp::stream<dsp::complex_t>* in, double sampleRate, bool b
         case FFTWindow::BLACKMAN_HARRIS4: for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::blackmanHarris4(i, _nzFFTSize); break;
         case FFTWindow::BLACKMAN_HARRIS7: for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::blackmanHarris7(i, _nzFFTSize); break;
     }
-    wscale = _nzFFTSize / wscale;
+    wscale = 1.0 / wscale;
     for (int i = 0; i < _nzFFTSize; i+=2) {
         fftWindowBuf[i]   *= -wscale;
         fftWindowBuf[i+1] *=  wscale;
@@ -270,7 +270,7 @@ void IQFrontEnd::handler(dsp::complex_t* data, int count, void* ctx) {
 
     // Convert the complex output of the FFT to dB amplitude
     if (fftBuf) {
-        volk_32fc_s32f_power_spectrum_32f(fftBuf, (lv_32fc_t*)_this->fftOutBuf, _this->_fftSize, _this->_fftSize);
+        volk_32fc_s32f_power_spectrum_32f(fftBuf, (lv_32fc_t*)_this->fftOutBuf, 1.0, _this->_fftSize);
     }
 
     // Release buffer
@@ -301,7 +301,7 @@ void IQFrontEnd::updateFFTPath(bool updateWaterfall) {
         case FFTWindow::BLACKMAN_HARRIS4: for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::blackmanHarris4(i, _nzFFTSize); break;
         case FFTWindow::BLACKMAN_HARRIS7: for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::blackmanHarris7(i, _nzFFTSize); break;
     }
-    wscale = _nzFFTSize / wscale;
+    wscale = 1.0 / wscale;
     for (int i = 0; i < _nzFFTSize; i+=2) {
         fftWindowBuf[i]   *= -wscale;
         fftWindowBuf[i+1] *=  wscale;
