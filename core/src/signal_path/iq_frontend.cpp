@@ -48,32 +48,10 @@ void IQFrontEnd::init(dsp::stream<dsp::complex_t>* in, double sampleRate, bool b
     // TODO: Do something to avoid basically repeating this code twice
     int skip;
     genReshapeParams(effectiveSr, _fftSize, _fftRate, skip, _nzFFTSize);
-    reshape.init(&fftIn, fftSize, skip);
+    reshape.init(&fftIn, _fftSize, skip);
     fftSink.init(&reshape.out, handler, this);
 
-    fftWindowBuf = dsp::buffer::alloc<float>(_nzFFTSize);
-    double wscale = 0.0f;
-    switch ( _fftWindow ) {
-        case FFTWindow::RECTANGULAR:      for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::rectangular(i, _nzFFTSize);     break;
-        case FFTWindow::HANN:             for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::hann(i, _nzFFTSize);            break;
-        case FFTWindow::HAMMING:          for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::hamming(i, _nzFFTSize);         break;
-        case FFTWindow::BLACKMAN:         for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::blackman(i, _nzFFTSize);        break;
-        case FFTWindow::NUTTALL:          for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::nuttall(i, _nzFFTSize);         break;
-        case FFTWindow::BLACKMAN_HARRIS4: for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::blackmanHarris4(i, _nzFFTSize); break;
-        case FFTWindow::BLACKMAN_HARRIS7: for (int i=0; i < _nzFFTSize; i++) wscale += fftWindowBuf[i] = dsp::window::blackmanHarris7(i, _nzFFTSize); break;
-    }
-    wscale = 1.0 / wscale;
-    for (int i = 0; i < _nzFFTSize; i+=2) {
-        fftWindowBuf[i]   *= -wscale;
-        fftWindowBuf[i+1] *=  wscale;
-    }
-
-    fftInBuf = (fftwf_complex*)fftwf_malloc(_fftSize * sizeof(fftwf_complex));
-    fftOutBuf = (fftwf_complex*)fftwf_malloc(_fftSize * sizeof(fftwf_complex));
-    fftwPlan = fftwf_plan_dft_1d(_fftSize, fftInBuf, fftOutBuf, FFTW_FORWARD, FFTW_ESTIMATE);
-
-    // Clear the rest of the FFT input buffer
-    dsp::buffer::clear(fftInBuf, _fftSize - _nzFFTSize, _nzFFTSize);
+    updateFFTSize();
 
     split.bindStream(&fftIn);
 
@@ -288,8 +266,22 @@ void IQFrontEnd::updateFFTPath(bool updateWaterfall) {
     reshape.setKeep(_nzFFTSize);
     reshape.setSkip(skip);
 
+    updateFFTSize();
+
+    // Update waterfall (TODO: This is annoying, it makes this module non testable and will constantly clear the waterfall for any reason)
+    if (updateWaterfall) { gui::waterfall.setRawFFTSize(_fftSize); }
+
+    // Restart branch
+    reshape.tempStart();
+    fftSink.tempStart();
+}
+
+void IQFrontEnd::updateFFTSize() {
     // Update window
-    dsp::buffer::free(fftWindowBuf);
+    if (fftWindowBuf != NULL) {
+        dsp::buffer::free(fftWindowBuf);
+        fftWindowBuf = NULL;
+    } 
     fftWindowBuf = dsp::buffer::alloc<float>(_nzFFTSize);
     double wscale = 0.0f;
     switch ( _fftWindow ) {
@@ -308,19 +300,18 @@ void IQFrontEnd::updateFFTPath(bool updateWaterfall) {
     }
 
     // Update FFT plan
-    fftwf_free(fftInBuf);
-    fftwf_free(fftOutBuf);
+    if (fftInBuf != NULL) {
+        fftwf_free(fftInBuf);
+        fftInBuf = NULL;
+    }
+    if (fftOutBuf != NULL) {
+        fftwf_free(fftOutBuf);
+        fftOutBuf = NULL;
+    }
     fftInBuf = (fftwf_complex*)fftwf_malloc(_fftSize * sizeof(fftwf_complex));
     fftOutBuf = (fftwf_complex*)fftwf_malloc(_fftSize * sizeof(fftwf_complex));
     fftwPlan = fftwf_plan_dft_1d(_fftSize, fftInBuf, fftOutBuf, FFTW_FORWARD, FFTW_ESTIMATE);
 
     // Clear the rest of the FFT input buffer
     dsp::buffer::clear(fftInBuf, _fftSize - _nzFFTSize, _nzFFTSize);
-
-    // Update waterfall (TODO: This is annoying, it makes this module non testable and will constantly clear the waterfall for any reason)
-    if (updateWaterfall) { gui::waterfall.setRawFFTSize(_fftSize); }
-
-    // Restart branch
-    reshape.tempStart();
-    fftSink.tempStart();
 }
