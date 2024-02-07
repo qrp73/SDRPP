@@ -248,7 +248,7 @@ namespace backend {
 
             glfwGetWindowSize(window, &_winWidth, &_winHeight);
 
-            if (ImGui::IsKeyPressed(GLFW_KEY_F11)) {
+            if (ImGui::IsKeyPressed(ImGuiKey_F11)) {
                 fullScreen = !fullScreen;
                 if (fullScreen) {
                     flog::info("Fullscreen: ON");
