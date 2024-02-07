@@ -125,25 +125,25 @@ namespace ImGui {
         if (centerFreq >= lowerFreq && centerFreq <= upperFreq) {
             auto xPos = fftAreaMin.x + ((centerFreq - lowerFreq) * horizScale);
             auto x = roundf(xPos);
-            auto y = roundf(fftAreaMax.y) + 1;
-            window->DrawList->AddLine(ImVec2(x-5,   y+5),
-                                      ImVec2(x+1,   y-1),
+            auto y = roundf(fftAreaMax.y) + 2;
+            window->DrawList->AddLine(ImVec2(x,   y),
+                                      ImVec2(x-5, y+5),
                                       IM_COL32(255, 0, 0, 255), style::uiScale);
-            window->DrawList->AddLine(ImVec2(x,     y),
-                                      ImVec2(x+5+1, y+5+1),
+            window->DrawList->AddLine(ImVec2(x,   y),
+                                      ImVec2(x+5, y+5),
                                       IM_COL32(255, 0, 0, 255), style::uiScale);
             window->DrawList->AddLine(ImVec2(x-5,   y+5),
-                                      ImVec2(x+5,   y+5),
+                                      ImVec2(x+5.1,   y+5),
                                       IM_COL32(255, 0, 0, 255), style::uiScale);
             y = roundf(fftAreaMin.y) - 1;
-            window->DrawList->AddLine(ImVec2(x-5,   y-5),
-                                      ImVec2(x+1,   y+1),
+            window->DrawList->AddLine(ImVec2(x,   y),
+                                      ImVec2(x-5, y-5),
                                       IM_COL32(255, 0, 0, 255), style::uiScale);
-            window->DrawList->AddLine(ImVec2(x,     y),
-                                      ImVec2(x+5+1, y-5-1),
+            window->DrawList->AddLine(ImVec2(x,   y),
+                                      ImVec2(x+5, y-5),
                                       IM_COL32(255, 0, 0, 255), style::uiScale);
             window->DrawList->AddLine(ImVec2(x-5,   y-5),
-                                      ImVec2(x+5,   y-5),
+                                      ImVec2(x+5.1,   y-5),
                                       IM_COL32(255, 0, 0, 255), style::uiScale);
         }
 
