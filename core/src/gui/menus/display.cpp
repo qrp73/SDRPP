@@ -58,14 +58,14 @@ namespace displaymenu {
 
     int fftSizeId = 0;
 
-    const IQFrontEnd::FFTWindow fftWindowList[] = {
-        IQFrontEnd::FFTWindow::RECTANGULAR,
-        IQFrontEnd::FFTWindow::HAMMING,
-        IQFrontEnd::FFTWindow::HANN,
-        IQFrontEnd::FFTWindow::BLACKMAN,
-        IQFrontEnd::FFTWindow::NUTTALL,
-        IQFrontEnd::FFTWindow::BLACKMAN_HARRIS4,
-        IQFrontEnd::FFTWindow::BLACKMAN_HARRIS7,
+    const dsp::window::windowType fftWindowList[] = {
+        dsp::window::windowType::RECTANGULAR,
+        dsp::window::windowType::HAMMING,
+        dsp::window::windowType::HANN,
+        dsp::window::windowType::BLACKMAN,
+        dsp::window::windowType::NUTTALL,
+        dsp::window::windowType::BLACKMAN_HARRIS4,
+        dsp::window::windowType::BLACKMAN_HARRIS7,
     };
 
     void updateFFTSpeeds() {
@@ -109,7 +109,7 @@ namespace displaymenu {
         fftRate = core::configManager.conf["fftRate"];
         sigpath::iqFrontEnd.setFFTRate(fftRate);
 
-        selectedWindow = std::clamp<int>((int)core::configManager.conf["fftWindow"], 0, (sizeof(fftWindowList) / sizeof(IQFrontEnd::FFTWindow)) - 1);
+        selectedWindow = std::clamp<int>((int)core::configManager.conf["fftWindow"], 0, (sizeof(fftWindowList) / sizeof(dsp::window::windowType)) - 1);
         sigpath::iqFrontEnd.setFFTWindow(fftWindowList[selectedWindow]);
 
         gui::menu.locked = core::configManager.conf["lockMenuOrder"];
