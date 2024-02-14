@@ -339,7 +339,12 @@ private:
             int i;
             for (i = 0; i < 10; i++) {
                 rtlsdr_set_center_freq(_this->openDev, freq);
-                if (rtlsdr_get_center_freq(_this->openDev) == newFreq) { break; }
+                if (rtlsdr_get_center_freq(_this->openDev) == newFreq) { 
+                    // workaround for rtl-sdr-blog driver bug 
+                    // https://github.com/rtlsdrblog/rtl-sdr-blog/issues/42
+                    rtlsdr_set_tuner_gain(_this->openDev, _this->gainList[_this->gainId]);
+                    break;
+                }
             }
             if (i > 1) {
                 flog::warn("RTL-SDR took {0} attempts to tune...", i);
