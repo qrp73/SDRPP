@@ -127,10 +127,11 @@ void VFOManager::setOffset(std::string name, double offset) {
 }
 
 double VFOManager::getOffset(std::string name) {
-    if (vfos.find(name) == vfos.end()) {
+    auto it = vfos.find(name);
+    if (it == vfos.end()) {
         return 0;
     }
-    return vfos[name]->getOffset();
+    return it->second->getOffset();
 }
 
 void VFOManager::setCenterOffset(std::string name, double offset) {

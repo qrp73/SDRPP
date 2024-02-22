@@ -50,15 +50,15 @@ namespace dsp {
             return *this;
         }
 
-        inline complex_t conj() {
+        inline complex_t conj() const {
             return complex_t{ re, -im };
         }
 
-        inline float phase() {
+        inline float phase() const {
             return atan2f(im, re);
         }
 
-        inline float fastPhase() {
+        inline float fastPhase() const {
             float abs_im = fabsf(im);
             float r, angle;
             if (re == 0.0f && im == 0.0f) { return 0.0f; }
@@ -76,11 +76,11 @@ namespace dsp {
             return angle;
         }
 
-        inline float amplitude() {
+        inline float amplitude() const {
             return sqrt((re * re) + (im * im));
         }
 
-        inline float fastAmplitude() {
+        inline float fastAmplitude() const {
             float re_abs = fabsf(re);
             float im_abs = fabsf(im);
             if (re_abs > im_abs) { return re_abs + 0.4f * im_abs; }
