@@ -265,7 +265,9 @@ namespace hermes {
 
             devices.push_back(info);
         }
-        
+
+        // Close broadcast socket
+        sock->close();        
 
         return devices;
     }
