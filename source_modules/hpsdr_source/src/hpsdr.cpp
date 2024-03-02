@@ -80,10 +80,12 @@ namespace hpsdr {
     }
 
     void Client::setFrequency(uint32_t freq) {
-        for (int i=0; i < 9; i++)
-            ctrl_NCO[i] = freq;
-        // sent page #2 to update frequency on next frame
-        _controlPage = 2;
+        //for (int i=0; i < 9; i++)
+        //    ctrl_NCO[i] = freq;
+        ctrl_NCO[0] = freq;
+        ctrl_NCO[1] = freq;
+        // sent page #1 to update frequency on next frame
+        _controlPage = 1;
     }
 
     void Client::setPreamp(bool enable) {
