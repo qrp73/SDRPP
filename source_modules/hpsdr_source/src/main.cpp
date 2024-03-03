@@ -129,6 +129,12 @@ private:
         auto cfgMac = config.conf["devices"][_selectedMac];
 
         if (!_selectedMac.empty()) {
+// "sampleRates": [
+//     { "id": 0, "value": 48000, "text": "48  kHz" },
+//     { "id": 1, "value": 96000, "text": "96  kHz" },
+//     { "id": 2, "value": 192000, "text": "192 kHz" },
+//     { "id": 3, "value": 384000, "text": "384 kHz" }
+// ]
             if (!cfgMac.contains("sampleRates")) {
                 auto defRates = json::array();
                 defRates.push_back({{"id", 0}, {"value", 48000},  {"text", "48  kHz"}});
