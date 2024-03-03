@@ -70,7 +70,9 @@ namespace hpsdr {
         }
 
         bool operator==(const Info& b) const {
-            return !memcmp(mac, b.mac, 6);
+            return !memcmp(mac, b.mac, 6) && 
+                addr.getIP() == b.addr.getIP() && 
+                addr.getPort() == b.addr.getPort();
         }
     };
 

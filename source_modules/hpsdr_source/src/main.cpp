@@ -81,19 +81,21 @@ public:
 
 private:
     void refresh() {
-        char mac[128];
+        char key[128];
         char buf[128];
         _devices.clear();
         auto devList = hpsdr::discover();
+        auto index = 0;
         for (auto& d : devList) {
-            sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", 
+            sprintf(key, "%02x:%02x:%02x:%02x:%02x:%02x %s:%d", 
                 d.mac[0], d.mac[1], d.mac[2], 
-                d.mac[3], d.mac[4], d.mac[5]);
-            sprintf(buf, "%s / %s v%d.%d", 
-                mac,
+                d.mac[3], d.mac[4], d.mac[5],
+                d.addr.getIPStr().c_str(), d.addr.getPort());
+            sprintf(buf, "%s:%d / %s v%d.%d", 
+                d.addr.getIPStr().c_str(), d.addr.getPort(),
                 d.getBoardName(),
                 d.verMajor, d.verMinor);
-            _devices.define(mac, buf, d);
+            _devices.define(key, buf, d);
         }
     }
 

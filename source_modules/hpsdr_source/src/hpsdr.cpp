@@ -388,6 +388,10 @@ namespace hpsdr {
         net::Address baddr("255.255.255.255", 1024);
         flog::info("HPSDR: send discovery for {0}:{1}", baddr.getIPStr(), baddr.getPort());
         sock->send(dgram, sizeof(dgram), &baddr);
+        // duplicate for loopback interface
+        baddr = net::Address("127.255.255.255", 1024);
+        flog::info("HPSDR: send discovery for {0}:{1}", baddr.getIPStr(), baddr.getPort());
+        sock->send(dgram, sizeof(dgram), &baddr);
         
         std::vector<Info> devices;
         while (true) {
@@ -432,6 +436,7 @@ namespace hpsdr {
         // Close broadcast socket
         sock->close(); 
 
+        flog::info("HPSDR: discovery complete");
         return devices;
     }
 
