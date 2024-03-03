@@ -84,17 +84,17 @@ private:
         char key[128];
         char buf[128];
         _devices.clear();
-        auto devList = hpsdr::discover();
+        auto devList = hpsdr::discovery();
         auto index = 0;
         for (auto& d : devList) {
             sprintf(key, "%02x:%02x:%02x:%02x:%02x:%02x %s:%d", 
-                d.mac[0], d.mac[1], d.mac[2], 
-                d.mac[3], d.mac[4], d.mac[5],
+                d.mac[0], d.mac[1], d.mac[2], d.mac[3], d.mac[4], d.mac[5],
                 d.addr.getIPStr().c_str(), d.addr.getPort());
-            sprintf(buf, "%s:%d / %s v%d.%d", 
+            sprintf(buf, "%s:%d / %s v%d.%d / %02x:%02x:%02x:%02x:%02x:%02x", 
                 d.addr.getIPStr().c_str(), d.addr.getPort(),
                 d.getBoardName(),
-                d.verMajor, d.verMinor);
+                d.verMajor, d.verMinor,
+                d.mac[0], d.mac[1], d.mac[2], d.mac[3], d.mac[4], d.mac[5]);
             _devices.define(key, buf, d);
         }
     }

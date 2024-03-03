@@ -4,6 +4,8 @@
 #include <mutex>
 #include <memory>
 #include <map>
+#include <functional>
+
 
 #ifdef _WIN32
 #include <WinSock2.h>
@@ -279,4 +281,6 @@ namespace net {
      * @return Socket instance on success, Throws runtime_error otherwise.
      */
     std::shared_ptr<Socket> openudp(std::string rhost, int rport, std::string lhost = "0.0.0.0", int lport = 0, bool isBroadcast = false);  
+
+    void enum_net_ifaces(std::function<void(const std::string ifa_name, const std::string ifa_addr)> callback);
 }

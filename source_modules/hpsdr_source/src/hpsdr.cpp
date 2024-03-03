@@ -374,8 +374,34 @@ namespace hpsdr {
         }
     }
 
-    std::vector<Info> discover() {
-        auto sock = net::openudp("0.0.0.0", 1024, "0.0.0.0", 0, true);
+    std::vector<Info> discovery() {
+        std::vector<Info> list;
+        std::unordered_map<std::string, bool> processedInterfaces;
+        net::enum_net_ifaces([&](const std::string ifa_name, const std::string ifa_addr) {
+            if (processedInterfaces[ifa_name]) 
+                return;
+            processedInterfaces[ifa_name] = true;
+            flog::info("HPSDR: discovery on interface {0} [{1}]", ifa_name, ifa_addr);
+            discovery(ifa_addr, [&](Info info) { 
+                if (std::find_if(list.begin(), list.end(), [&](const Info& existingInfo) { 
+                    return existingInfo == info;
+                }) == list.end()) {
+                    list.push_back(info);
+                }
+            });
+            flog::info("HPSDR: discovery complete");
+        });
+        std::sort(list.begin(), list.end(), [](const Info& a, const Info& b) {
+            if (a.addr.getIP() != b.addr.getIP()) {
+                return a.addr.getIP() < b.addr.getIP();
+            }
+            return a.addr.getPort() < b.addr.getPort();
+        });
+        return list;
+    }
+
+    void discovery(std::string addr, std::function<void(Info)> callback) {
+        auto sock = net::openudp("0.0.0.0", 1024, addr, 0, true);
         
         // Build discovery packet
         // <0xEFFE><0x02><60 bytes of 0x00>
@@ -388,12 +414,7 @@ namespace hpsdr {
         net::Address baddr("255.255.255.255", 1024);
         flog::info("HPSDR: send discovery for {0}:{1}", baddr.getIPStr(), baddr.getPort());
         sock->send(dgram, sizeof(dgram), &baddr);
-        // duplicate for loopback interface
-        baddr = net::Address("127.255.255.255", 1024);
-        flog::info("HPSDR: send discovery for {0}:{1}", baddr.getIPStr(), baddr.getPort());
-        sock->send(dgram, sizeof(dgram), &baddr);
         
-        std::vector<Info> devices;
         while (true) {
             net::Address addr;
             uint8_t resp[1024];
@@ -429,15 +450,10 @@ namespace hpsdr {
                 macstr, 
                 (uint8_t)info.boardId, info.getBoardName(), 
                 info.verMajor, info.verMinor);
-
-            devices.push_back(info);
+            callback(info);
         }
-        
         // Close broadcast socket
         sock->close(); 
-
-        flog::info("HPSDR: discovery complete");
-        return devices;
     }
 
     std::shared_ptr<Client> open(std::string host, int port, dsp::stream<dsp::complex_t> *iqStream) {

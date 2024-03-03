@@ -22,6 +22,8 @@
 #include <vector>
 #include <string>
 #include <thread>
+#include <functional> // std::function
+
 
 #define HERMES_METIS_TIMEOUT    1000
 
@@ -145,7 +147,8 @@ namespace hpsdr {
         void processBandscopeFromRadio(uint8_t* buffer);
     };
 
-    std::vector<Info> discover();
+    std::vector<Info> discovery();
+    void discovery(std::string addr, std::function<void(Info)> callback);
     std::shared_ptr<Client> open(std::string host, int port, dsp::stream<dsp::complex_t> *iqStream);
     std::shared_ptr<Client> open(const net::Address& addr, dsp::stream<dsp::complex_t> *iqStream);
 }

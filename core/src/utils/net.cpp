@@ -2,6 +2,9 @@
 #include <string.h>
 #include <codecvt>
 #include <stdexcept>
+#include <utils/flog.h>
+#include <arpa/inet.h>
+
 
 #ifdef _WIN32
 #define WOULD_BLOCK (WSAGetLastError() == WSAEWOULDBLOCK)
@@ -443,5 +446,23 @@ namespace net {
 
     std::shared_ptr<Socket> openudp(std::string rhost, int rport, std::string lhost, int lport, bool isBroadcast) {
         return openudp(Address(rhost, rport), Address(lhost, lport), isBroadcast);
+    }
+
+    void enum_net_ifaces(std::function<void(const std::string ifa_name, const std::string ifa_addr)> callback) {
+        struct ifaddrs* ifAddrStruct = nullptr;
+        if (getifaddrs(&ifAddrStruct) == -1) {
+            flog::error("net::enum_net_ifaces(): getifaddrs failed");
+            return;
+        }
+        // Iterate through interfaces and send broadcast on each one
+        for (struct ifaddrs* ifa = ifAddrStruct; ifa != nullptr; ifa = ifa->ifa_next) {
+            if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET) {
+                std::string ipAddress = inet_ntoa(((struct sockaddr_in*)ifa->ifa_addr)->sin_addr);
+                std::string ifaName = ifa->ifa_name;
+                callback(ifaName, ipAddress);
+            }
+        }
+        // Free memory allocated by getifaddrs
+        freeifaddrs(ifAddrStruct);
     }
 }
