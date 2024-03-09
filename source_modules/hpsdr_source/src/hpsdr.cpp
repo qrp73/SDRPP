@@ -16,6 +16,7 @@
  */
 #include "hpsdr.h"
 #include "convert_be.h"
+#include <algorithm>
 #include <utils/flog.h>
 
 namespace hpsdr {
@@ -77,6 +78,7 @@ namespace hpsdr {
     void Client::setSamplerate(HpsdrSampleRate sampleRateId, uint32_t sampleRate) {
         ctrl_SampleRateId = (uint8_t)sampleRateId;
         _sampleRate = sampleRate;
+        _controlPage = 0;
     }
 
     void Client::setFrequency(uint32_t freq) {
@@ -85,23 +87,27 @@ namespace hpsdr {
         ctrl_NCO[0] = freq;
         ctrl_NCO[1] = freq;
         // sent page #1 to update frequency on next frame
-        _controlPage = 1;
+        _controlPage = std::min(_controlPage, 1);
     }
 
     void Client::setPreamp(bool enable) {
         ctrl_Preamp = enable;
+        _controlPage = 0;
     }
 
     void Client::setAtten(int gain, bool enable) {
         uint8_t v = gain & 0x3f;
         if (enable) v |= 1 << 6;
         ctrl_Attenuator = v;
+        _controlPage = std::min(_controlPage, 10);
     }
     void Client::setDither(bool enable) {
         ctrl_Dither = enable;
+        _controlPage = 0;
     }
     void Client::setRandomizer(bool enable) {
         ctrl_Randomizer = enable;
+        _controlPage = 0;
     }
 
     // TODO: add filter support

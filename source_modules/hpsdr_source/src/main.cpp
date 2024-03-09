@@ -316,7 +316,14 @@ private:
         }
         SmGui::SameLine();
         SmGui::FillWidth();
-        if (SmGui::SliderInt(CONCAT("##hpsdr_source_att_gain_", _this->_name), &_this->_attGain, 0, 63)) {
+        char gain_txt[128];
+        if (!_this->_isAtt) {
+            snprintf(gain_txt, sizeof(gain_txt), "%d", _this->_attGain);
+        } else {
+            int32_t gain_dB = (_this->_attGain & 0x3f) - 12;
+            snprintf(gain_txt, sizeof(gain_txt), "%d dB", gain_dB);
+        }
+        if (ImGui::SliderInt(CONCAT("##hpsdr_source_att_gain_", _this->_name), &_this->_attGain, 0, 63, gain_txt)) {
             if (_this->_running) {
                 _this->dev->setAtten(_this->_attGain, _this->_isAtt);
             }
