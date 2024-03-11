@@ -23,6 +23,7 @@
 #include <string>
 #include <thread>
 #include <functional> // std::function
+#include <list>
 
 
 #define HERMES_METIS_TIMEOUT    1000
@@ -49,6 +50,15 @@ namespace hpsdr {
         SR_96KHZ  = 1,
         SR_192KHZ = 2,
         SR_384KHZ = 3
+    };
+
+    struct SampleTime {
+        std::chrono::nanoseconds t0;
+        std::chrono::nanoseconds t1;
+        int value;
+
+        SampleTime(std::chrono::nanoseconds t0, std::chrono::nanoseconds t1, int value)
+        : t0(t0), t1(t1), value(value) {}
     };
     
     struct Info {
@@ -134,6 +144,10 @@ namespace hpsdr {
         uint32_t _rxSeqEP6 = 0xffffffff;
         uint32_t _txSeqEP2 = 0;
         uint32_t _rxSampleCounter = 0;
+        //uint32_t _ep6samples = 0;
+        std::chrono::nanoseconds _lastSampleTime;
+        std::list<uint32_t> _lastRates;
+        std::list<SampleTime> _sampleTimes;
         
         uint32_t _sampleRate;
         int _controlPage = 0;
@@ -145,6 +159,9 @@ namespace hpsdr {
         bool processFlowFromRadio(uint8_t* buffer);
         void processControlFromRadio(uint8_t* buffer);
         void processBandscopeFromRadio(uint8_t* buffer);
+
+public:
+        uint32_t _measuredRate = 0;
     };
 
     std::vector<Info> discovery();

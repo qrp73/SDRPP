@@ -292,6 +292,18 @@ private:
 
         if (_this->_running) { SmGui::EndDisabled(); }
 
+        SmGui::BeginDisabled();
+        SmGui::FillWidth();
+        int sr = 0;
+        if (_this->dev != NULL) {
+            sr = (int)((double)_this->dev->_measuredRate / 1000.0 +0.5);
+        }
+        char buf[128];
+        snprintf(buf, sizeof(buf), "SR: %d kS/s", sr);
+        SmGui::LeftLabel(buf);
+        ImGui::NewLine();
+        SmGui::EndDisabled();
+
         if (_this->_selectedMac.empty()) { SmGui::BeginDisabled(); }
 
         if (SmGui::Checkbox(CONCAT("Preamp##_hpsdr_preamp_", _this->_name), &_this->_isPreamp)) {

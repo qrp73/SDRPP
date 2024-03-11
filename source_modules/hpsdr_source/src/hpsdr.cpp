@@ -17,6 +17,7 @@
 #include "hpsdr.h"
 #include "convert_be.h"
 #include <algorithm>
+#include <chrono>
 #include <utils/flog.h>
 
 namespace hpsdr {
@@ -283,6 +284,38 @@ namespace hpsdr {
         uint32_t sampleCount = (bufLen - 8) / channelStep;
         _rxSampleCounter += (uint)sampleCount;
         //_ep6samples += (uint)sampleCount;
+        std::chrono::nanoseconds nanoSeconds = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch());
+        _sampleTimes.push_back(SampleTime(_lastSampleTime, nanoSeconds, sampleCount));
+        _lastSampleTime = nanoSeconds;
+        const auto timePeriod = std::chrono::milliseconds(300);
+        if (!_sampleTimes.empty()) {
+            std::chrono::nanoseconds diff = _sampleTimes.back().t1 - _sampleTimes.front().t0;
+            if (diff >= timePeriod) {
+                uint64_t sum = 0;
+                for (const auto& data : _sampleTimes) {
+                    sum += data.value;
+                }
+                _lastRates.push_back( sum * 1000000000 / diff.count() );
+                while (_sampleTimes.size() > 3) {
+                    _sampleTimes.pop_front();
+                }
+                // calc median
+                std::list<uint32_t> sortedList(_lastRates);
+                sortedList.sort();
+                size_t size = sortedList.size();
+                auto middle = std::next(sortedList.begin(), size / 2);
+                if (size % 2 == 1) {
+                    _measuredRate = *middle;
+                } else {
+                    auto prevMiddle = std::prev(middle);
+                    _measuredRate =  (*middle + *prevMiddle) / 2.0;
+                }
+            }
+            while (diff >= timePeriod && !_sampleTimes.empty()) {
+                _sampleTimes.pop_front();
+                diff = _sampleTimes.back().t1 - _sampleTimes.front().t0;
+            }
+        }
                         
         // upstream EP2 audio with fixed 48 kHz rate
         uint32_t sampleRate = _sampleRate;
