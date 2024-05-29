@@ -153,7 +153,6 @@ public:
 
         // Update samplerate from ID
         sampleRate = sampleRates[srId];
-        core::setInputSampleRate(sampleRate);
     }
 
 private:
@@ -234,6 +233,7 @@ private:
         if (SmGui::Combo(CONCAT("##_audio_dev_sel_", _this->name), &_this->devId, _this->devices.txt)) {
             std::string dev = _this->devices.key(_this->devId);
             _this->select(dev);
+            core::setInputSampleRate(_this->sampleRate);
             config.acquire();
             config.conf["device"] = dev;
             config.release(true);
@@ -255,6 +255,7 @@ private:
         if (SmGui::Button(CONCAT("Refresh##_audio_refr_", _this->name))) {
             _this->refresh();
             _this->select(_this->selectedDevice);
+            core::setInputSampleRate(_this->sampleRate);
         }
 
         if (_this->running) { SmGui::EndDisabled(); }

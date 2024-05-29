@@ -197,8 +197,7 @@ private:
         }
 
         if (_this->_srId >= 0) {
-            auto sampleRate = _this->_sampleRates.key(_this->_srId);
-            core::setInputSampleRate(sampleRate);
+            core::setInputSampleRate(_this->getSampleRate());
         }
     }
 
@@ -215,8 +214,7 @@ private:
         
         _this->dev = hpsdr::open(_this->_devices[_this->_devId].addr, &_this->_stream);
 
-        auto sampleRate = _this->_sampleRates.key(_this->_srId);
-        _this->dev->setSamplerate((hpsdr::HpsdrSampleRate)_this->_srId, sampleRate);
+        _this->dev->setSamplerate((hpsdr::HpsdrSampleRate)_this->_srId, _this->getSampleRate());
         _this->dev->setFrequency(_this->_freq);
         _this->dev->setPreamp(_this->_isPreamp);
         _this->dev->setAtten(_this->_attGain, _this->_isAtt);
@@ -253,6 +251,9 @@ private:
         SmGui::ForceSync();
         if (SmGui::Combo(CONCAT("##_hpsdr_dev_sel_", _this->_name), &_this->_devId, _this->_devices.txt)) {
             _this->selectMac(_this->_devices.key(_this->_devId));
+            if (_this->_srId >= 0) {
+                core::setInputSampleRate(_this->getSampleRate());
+            }
             if (!_this->_selectedMac.empty()) {
                 config.acquire();
                 config.conf["device"] = _this->_devices.key(_this->_devId);
@@ -264,8 +265,7 @@ private:
         if (SmGui::Combo(CONCAT("##_hpsdr_sr_sel_", _this->_name), &_this->_srId, _this->_sampleRates.txt)) {
             if (!_this->_selectedMac.empty()) {
                 if (_this->_srId >= 0) {
-                    auto sampleRate = _this->_sampleRates.key(_this->_srId);
-                    core::setInputSampleRate(sampleRate);
+                    core::setInputSampleRate(_this->getSampleRate());
 
                     config.acquire();
                     config.conf["devices"][_this->_selectedMac]["sampleRateId"] = _this->_srId;
@@ -288,6 +288,11 @@ private:
             std::string mac = config.conf["device"];
             config.release();
             _this->selectMac(mac);
+            if (!_this->_selectedMac.empty()) {
+                if (_this->_srId >= 0) {
+                    core::setInputSampleRate(_this->getSampleRate());
+                }
+            }
         }
 
         if (_this->_running) { SmGui::EndDisabled(); }
@@ -369,6 +374,10 @@ private:
         }
 #endif
         if (_this->_selectedMac.empty()) { SmGui::EndDisabled(); }
+    }
+
+    int getSampleRate() {
+        return _sampleRates.key(_srId);        
     }
 
     std::string _name;
