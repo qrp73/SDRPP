@@ -43,18 +43,7 @@ namespace displaymenu {
         2048,
         1024
     };
-
-    const char* FFTSizesStr = "1048576\0"
-                              "524288\0"
-                              "262144\0"
-                              "131072\0"
-                              "65536\0"
-                              "32768\0"
-                              "16384\0"
-                              "8192\0"
-                              "4096\0"
-                              "2048\0"
-                              "1024\0";
+    std::string FFTSizesTxt;
 
     int fftSizeId = 0;
 
@@ -96,12 +85,18 @@ namespace displaymenu {
         fullWaterfallUpdate = core::configManager.conf["fullWaterfallUpdate"];
         gui::waterfall.setFullWaterfallUpdate(fullWaterfallUpdate);
 
-        fftSizeId = 3;
+        int fftSizesCount = sizeof(FFTSizes)/sizeof(int);
+        fftSizeId = fftSizesCount / 2;
         int fftSize = core::configManager.conf["fftSize"];
-        for (int i = 0; i < 7; i++) {
+
+        char buf[256];
+        FFTSizesTxt = "";
+        for (int i=0; i < fftSizesCount; i++) {
+            sprintf(buf, "%d", FFTSizes[i]);
+            FFTSizesTxt += buf;
+            FFTSizesTxt += '\0';
             if (fftSize == FFTSizes[i]) {
                 fftSizeId = i;
-                break;
             }
         }
         sigpath::iqFrontEnd.setFFTSize(FFTSizes[fftSizeId]);
@@ -235,7 +230,7 @@ namespace displaymenu {
 
         ImGui::LeftLabel("FFT Size");
         ImGui::SetNextItemWidth(menuWidth - ImGui::GetCursorPosX());
-        if (ImGui::Combo("##sdrpp_fft_size", &fftSizeId, FFTSizesStr)) {
+        if (ImGui::Combo("##sdrpp_fft_size", &fftSizeId, FFTSizesTxt.c_str())) {
             sigpath::iqFrontEnd.setFFTSize(FFTSizes[fftSizeId]);
             core::configManager.acquire();
             core::configManager.conf["fftSize"] = FFTSizes[fftSizeId];
