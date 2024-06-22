@@ -13,6 +13,7 @@ Have good day and 73
 
 ## Features
 
+- added SDL2 OpenGL ES backend (can be enabled in cmake) which supports Linux KMS DRM mode, it can run without desktop.
 - fixed waterfall zoom
 - SNR meter replaced with level meter + level and SNR text indication 
 - unity gain for FFT and window functions
