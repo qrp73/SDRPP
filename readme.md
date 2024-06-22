@@ -13,7 +13,7 @@ Have good day and 73
 
 ## Features
 
-- added SDL2 OpenGL ES backend (can be enabled in cmake) which supports Linux KMS DRM mode, it can run without desktop.
+- added SDL2 OpenGL ES backend (can be enabled in cmake) which supports Linux KMS DRM mode, it can run without desktop. Tested on Raspberry Pi Zero 2W.
 - fixed waterfall zoom
 - SNR meter replaced with level meter + level and SNR text indication 
 - unity gain for FFT and window functions
@@ -55,7 +55,7 @@ sudo apt install -y \
    git wget p7zip-full build-essential cmake cmake-curses-gui libtool xxd autoconf \
    libfftw3-dev libglfw3-dev libglew-dev libvolk2-dev libsoapysdr-dev libairspyhf-dev libairspy-dev \
    libiio-dev libad9361-dev librtaudio-dev libhackrf-dev librtlsdr-dev libbladerf-dev liblimesuite-dev \
-   libcodec2-dev libzstd-dev portaudio19-dev
+   libcodec2-dev libzstd-dev portaudio19-dev libsdl2-dev
 ```
 If `libvolk2-dev` is not available, use `libvolk1-dev`.
 
