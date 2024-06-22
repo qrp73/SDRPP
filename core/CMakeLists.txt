@@ -19,6 +19,10 @@ if (MSVC)
 endif ()
 
 # Configure backend sources
+if (OPT_BACKEND_SDL2)
+    file(GLOB_RECURSE BACKEND_SRC "backends/sdl2/*.cpp" "backends/sdl2/*.c")
+    add_definitions(-DIMGUI_IMPL_OPENGL_ES2)
+endif (OPT_BACKEND_SDL2)
 if (OPT_BACKEND_GLFW)
     file(GLOB_RECURSE BACKEND_SRC "backends/glfw/*.cpp" "backends/glfw/*.c")
 endif (OPT_BACKEND_GLFW)
@@ -41,6 +45,22 @@ target_include_directories(sdrpp_core PUBLIC "src/")
 target_include_directories(sdrpp_core PUBLIC "src/imgui")
 
 # Configure backend includes and libraries
+if (OPT_BACKEND_SDL2)
+    target_include_directories(sdrpp_core PUBLIC "backends/sdl2")
+    target_include_directories(sdrpp_core PUBLIC "backends/sdl2/imgui")
+
+    if (MSVC)
+        # SDL2
+        find_package(SDL2 REQUIRED)
+        target_link_libraries(sdrpp_core PUBLIC ${SDL2_LIBRARIES})
+    else()
+        find_package(SDL2 REQUIRED)		# sudo apt install libsdl2-dev
+        find_package(PkgConfig)
+
+        target_include_directories(sdrpp_core PUBLIC ${SDL2_INCLUDE_DIRS})
+        target_link_libraries(sdrpp_core PUBLIC ${SDL2_LIBRARIES})
+    endif()
+endif (OPT_BACKEND_SDL2)
 if (OPT_BACKEND_GLFW)
     target_include_directories(sdrpp_core PUBLIC "backends/glfw")
     target_include_directories(sdrpp_core PUBLIC "backends/glfw/imgui")
@@ -122,7 +142,6 @@ else()
 
     pkg_check_modules(FFTW3 REQUIRED fftw3f)
     pkg_check_modules(VOLK REQUIRED volk)
-    pkg_check_modules(GLFW3 REQUIRED glfw3)
     pkg_check_modules(LIBZSTD REQUIRED libzstd)
 
     target_include_directories(sdrpp_core PUBLIC
