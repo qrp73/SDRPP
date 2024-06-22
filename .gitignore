@@ -1,4 +1,5 @@
 build/
+build-release/
 .vscode/
 .vs/
 .cache/
@@ -18,3 +19,5 @@ m17_decoder/libcorrect
 SDR++.app
 android/deps
 android/app/assets
+.kdev4/
+SDRPP.kdev4
