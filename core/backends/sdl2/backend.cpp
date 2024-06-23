@@ -93,8 +93,10 @@ namespace backend {
 
         // Create window with graphics context
         SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+        //SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+        //SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+        //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+        //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
         SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
         if (maximized) {
             window_flags = (SDL_WindowFlags)(window_flags | SDL_WINDOW_MAXIMIZED);
@@ -119,6 +121,9 @@ namespace backend {
 
         flog::info("OpenGL: {}", (const char*)(glGetString(GL_VERSION)));
         flog::info("GLSL:   {}", (const char*)(glGetString(GL_SHADING_LANGUAGE_VERSION)));
+        GLint samples = 0;
+        glGetIntegerv(GL_SAMPLES, &samples);
+        flog::info("GL_SAMPLES: {}", samples);
 
         //if (maximized) {
         //    SDL_MaximizeWindow(window);

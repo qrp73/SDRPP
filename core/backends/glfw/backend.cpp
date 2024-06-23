@@ -115,6 +115,9 @@ namespace backend {
     #endif
         flog::info("OpenGL: {}", (const char*)(glGetString(GL_VERSION)));
         flog::info("GLSL:   {}", (const char*)(glGetString(GL_SHADING_LANGUAGE_VERSION)));
+        GLint samples = 0;
+        glGetIntegerv(GL_SAMPLES, &samples);
+        flog::info("GL_SAMPLES: {}", samples);
 
         // Load app icon
         if (!std::filesystem::is_regular_file(resDir + "/icons/sdrpp.png")) {
