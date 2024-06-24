@@ -42,10 +42,12 @@ namespace backend {
     int winHeight = 0;
     int winWidth = 0;
     bool _maximized = maximized;
+    bool _fullScreen = fullScreen;
     int _winWidth, _winHeight;
     SDL_Window* window;
     SDL_GLContext gl_context;
     bool isWindowShouldClose = false;
+    bool isKmsDrm = false;
 
     int init(std::string resDir) {
         // Load config
@@ -61,6 +63,13 @@ namespace backend {
         {
             flog::error("SDL_Init() failed: {}", SDL_GetError());
             return -1;
+        }
+
+        // Check if we are running on KMS DRM
+        // TODO: is there a better way?
+        isKmsDrm = std::getenv("DISPLAY") == NULL;
+        if (isKmsDrm) {
+            printf("KMS DRM mode detected\n");
         }
 
         // Decide GL+GLSL versions
@@ -97,12 +106,27 @@ namespace backend {
         //SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
         //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
         //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
-        SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+        auto window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
         if (maximized) {
-            window_flags = (SDL_WindowFlags)(window_flags | SDL_WINDOW_MAXIMIZED);
+            window_flags = window_flags | SDL_WINDOW_MAXIMIZED;
             _maximized = true;
             //winWidth = 1280;
             //winHeight = 720;
+        }
+        if (fullScreen) {
+            window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN | SDL_WINDOW_ALLOW_HIGHDPI;
+        }
+        if (isKmsDrm) {
+            window_flags = SDL_WINDOW_FULLSCREEN | SDL_WINDOW_ALLOW_HIGHDPI;
+        }
+        if (fullScreen || isKmsDrm) {
+            SDL_Rect displayBounds;
+            if (SDL_GetDisplayBounds(0, &displayBounds) != 0) {
+                flog::error("SDL_GetDisplayBounds() failed: {}", SDL_GetError());
+                return -1;
+            }
+            winWidth = displayBounds.w;
+            winHeight = displayBounds.h;
         }
         window = SDL_CreateWindow("SDRPP v" VERSION_STR " (Built at " __TIME__ ", " __DATE__ ")", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, winWidth, winHeight, window_flags);
         if (window == nullptr)
@@ -124,11 +148,6 @@ namespace backend {
         GLint samples = 0;
         glGetIntegerv(GL_SAMPLES, &samples);
         flog::info("GL_SAMPLES: {}", samples);
-
-        //if (maximized) {
-        //    SDL_MaximizeWindow(window);
-        //    _maximized = true;
-        //}
 
         // Setup Dear ImGui context
         IMGUI_CHECKVERSION();
@@ -153,6 +172,10 @@ namespace backend {
         }
 
         SDL_GetWindowSize(window, &_winWidth, &_winHeight);
+        auto windowFlags = SDL_GetWindowFlags(window);
+        _maximized = (windowFlags & SDL_WINDOW_MAXIMIZED) != 0;
+        _fullScreen = (windowFlags & SDL_WINDOW_FULLSCREEN_DESKTOP) || (windowFlags & SDL_WINDOW_FULLSCREEN);
+
         return 0;
     }
 
@@ -217,6 +240,9 @@ namespace backend {
                     if ((event.key.keysym.mod & KMOD_ALT) && event.key.keysym.sym == SDLK_F4) {
                         isWindowShouldClose = true;
                     }
+                    if (event.key.keysym.sym == SDLK_F11 && !isKmsDrm) {
+                        SDL_SetWindowFullscreen(window, fullScreen ? 0 : SDL_WINDOW_FULLSCREEN);
+                    }
                     break;
             }
         }
@@ -226,44 +252,24 @@ namespace backend {
     int renderLoop() {
         // Main loop
         while (!isWindowShouldClose) {
-            //pollEvents();
-
-            beginFrame();
-            
-            maximized = (SDL_GetWindowFlags(window) & SDL_WINDOW_MAXIMIZED) != 0;
-            if (_maximized != maximized) {
-                _maximized = maximized;
-                core::configManager.acquire();
-                core::configManager.conf["maximized"] = _maximized;
-                core::configManager.release(true);
-            }
-
-            //ImGuiIO& io = ImGui::GetIO();
-            //_winWidth = (int)io.DisplaySize.x;
-            //_winHeight = (int)io.DisplaySize.y;
+            auto windowFlags = SDL_GetWindowFlags(window);
+            _maximized = (windowFlags & SDL_WINDOW_MAXIMIZED) != 0;
+            _fullScreen = (windowFlags & SDL_WINDOW_FULLSCREEN_DESKTOP) || (windowFlags & SDL_WINDOW_FULLSCREEN);
             SDL_GetWindowSize(window, &_winWidth, &_winHeight);
 
-            if (ImGui::IsKeyPressed(ImGuiKey_F11)) {
-                fullScreen = !fullScreen;
-                if (fullScreen) {
-                    flog::info("Fullscreen: ON");
-                    if (SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN) == 0) {
-                        core::configManager.acquire();
-                        core::configManager.conf["fullscreen"] = true;
-                        core::configManager.release();
-                    }
-                }
-                else {
-                    flog::info("Fullscreen: OFF");
-                    if (SDL_SetWindowFullscreen(window, 0) != 0) {
-                        core::configManager.acquire();
-                        core::configManager.conf["fullscreen"] = false;
-                        core::configManager.release();
-                    }
-                }
+            if (!isKmsDrm && _maximized != maximized) {
+                maximized = _maximized;
+                core::configManager.acquire();
+                core::configManager.conf["maximized"] = maximized;
+                core::configManager.release(true);
             }
-
-            if ((_winWidth != winWidth || _winHeight != winHeight) && !maximized && _winWidth > 0 && _winHeight > 0) {
+            if (!isKmsDrm && _fullScreen != fullScreen) {
+                fullScreen = _fullScreen;
+                core::configManager.acquire();
+                core::configManager.conf["fullscreen"] = fullScreen;
+                core::configManager.release();
+            }
+            if (!maximized && (_winWidth != winWidth || _winHeight != winHeight) && _winWidth > 0 && _winHeight > 0) {
                 winWidth = _winWidth;
                 winHeight = _winHeight;
                 core::configManager.acquire();
@@ -272,12 +278,12 @@ namespace backend {
                 core::configManager.release(true);
             }
 
+            beginFrame();
             if (_winWidth > 0 && _winHeight > 0) {
                 ImGui::SetNextWindowPos(ImVec2(0, 0));
                 ImGui::SetNextWindowSize(ImVec2(_winWidth, _winHeight));
                 gui::mainWindow.draw();
             }
-
             render();
         }
 
@@ -294,6 +300,6 @@ namespace backend {
         SDL_DestroyWindow(window);
         SDL_Quit();
 
-        return 0; // TODO: Int really needed?
+        return 0;
     }
 }
