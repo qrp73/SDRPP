@@ -64,12 +64,29 @@ Build and install:
 ```
 git clone https://github.com/qrp73/SDRPP
 cd SDRPP
-mkdir -p build
-cd build
+mkdir -p build && cd build
 cmake ..
 make -j4
 sudo make install
 ```
+
+Build with SDL2 backend to use in KMS DRM mode (don't requires graphics desktop to run):
+```
+git clone https://github.com/qrp73/SDRPP
+cd SDRPP
+mkdir -p build && cd build
+cmake -DOPT_BACKEND_GLFW=OFF -DOPT_BACKEND_SDL2=ON ..
+make -j4
+sudo make install
+```
+
+Run:
+```
+sdrpp
+```
+
+When running with SDL2 backend you can exit to command line with Alt+F4.
+
 
 ### Uninstall on Debian
 
