@@ -2821,6 +2821,31 @@ bool ImGui::SliderBehaviorT(const ImRect& bb, ImGuiID id, ImGuiDataType data_typ
 
     // Process interacting with the slider
     bool value_changed = false;
+    if (g.IO.MouseWheel != 0) {
+        if (bb.Contains(g.IO.MousePos)) {
+            auto wheel = g.IO.MouseWheel;
+            if (axis == ImGuiAxis_X) wheel = -wheel; // just coincidence
+            auto stepPerPixel = fabs((double)v_max - (double)v_min) / std::max<float>(bb.GetHeight(), bb.GetWidth());
+            auto oldv = *v;
+            if (wheel > 0) { // scroll up -> fewer
+                *v -= stepPerPixel;
+                if (*v == oldv) {   // step too small for int bars
+                    (*v)--;
+                }
+                if (*v < std::min(v_min, v_max))
+                    *v = std::min(v_min, v_max);
+                value_changed = true;
+            } else {
+                *v += stepPerPixel;
+                if (*v == oldv) {   // step too small for int bars
+                    (*v)++;
+                }
+                if (*v > std::max(v_min, v_max))
+                    *v = std::max(v_min, v_max);
+                value_changed = true;
+            }
+        }
+    }
     if (g.ActiveId == id)
     {
         bool set_new_value = false;
