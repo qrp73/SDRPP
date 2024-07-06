@@ -69,7 +69,7 @@ namespace backend {
         // TODO: is there a better way?
         isKmsDrm = std::getenv("DISPLAY") == NULL;
         if (isKmsDrm) {
-            printf("KMS DRM mode detected\n");
+            flog::info("KMS DRM mode detected");
         }
 
         // Decide GL+GLSL versions
