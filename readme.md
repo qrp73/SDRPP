@@ -111,7 +111,7 @@ sudo pacman -Sy \
     git wget base-devel cmake core/libtool core/autoconf \
     fftw extra/glfw-x11 extra/glew libvolk extra/soapysdr extra/airspy \
     extra/libiio extra/libad9361 extra/rtaudio extra/hackrf extra/rx_tools extra/bladerf extra/limesuite \
-    extra/codec2 core/zstd extra/portaudio
+    extra/codec2 core/zstd extra/portaudio rtl-sdr
 yay airspyhf-git
 ```
 
