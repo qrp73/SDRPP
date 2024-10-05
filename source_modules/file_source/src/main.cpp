@@ -123,6 +123,9 @@ private:
             if (!_isLoop)
                 return false;
             reset();
+            if (_reader == NULL || !_reader->isValid()) {
+                return false;
+            }
             return true;
         } else if (!stream.swap(samples)) { 
             return false; 
@@ -136,11 +139,12 @@ private:
             return;
         }
         char sbuf[128];
-        sprintf(sbuf, "FMT: %u/%s, %u bit, %.f kHz", 
+        sprintf(sbuf, "FMT: %u/%s, %u bit, %.f kHz x %u",
             _reader->getFormat(),
             _reader->getFormatName(), 
             _reader->getBitDepth(), 
-            _reader->getSampleRate()/1000.0f);
+            _reader->getSampleRate()/1000.0f,
+            _reader->getChannelCount());
         _fmtText = std::string(sbuf);
     }
 
@@ -166,7 +170,9 @@ private:
         if (_this->_running) { return; }
         if (_this->_reader == NULL) { return; }
         _this->_running = true;
-        _this->_workerThread = std::thread(worker, _this);
+        _this->_workerThread = std::thread(
+            _this->_reader->getChannelCount() == 1 ?
+                worker_1ch : worker_2ch, _this);
     }
 
     static void stop(void* ctx) {
@@ -263,7 +269,148 @@ private:
         ImGui::Checkbox("Lock frequency##_file_source", &_this->_isLock);
     }
     
-    static void worker(void* ctx) {
+    static void worker_1ch(void* ctx) {
+        FileSourceModule* _this = (FileSourceModule*)ctx;
+        int blockSize = std::min((int)(_this->_reader->getSampleRate()/200), (int)STREAM_BUFFER_SIZE);
+        blockSize = std::max(1, blockSize);
+
+        flog::info("FileSource: blockSize={0}", blockSize);
+        auto reader = _this->_reader;
+        if (reader->getChannelCount() != 1) {
+            flog::error("FileSource: not supported channel count: {0}", reader->getChannelCount());
+            return;
+        }
+        if (reader->getSampleCount() < 1) {
+            flog::error("FileSource: no samples: {0}", reader->getSampleCount());
+            return;
+        }
+
+        auto fmtCode = reader->getFormat();
+        auto fmtBits = reader->getBitDepth();
+
+        // Left=I, Right=Q
+        if (fmtCode == WAVE_FORMAT::IEEE_FLOAT && fmtBits == 32) {
+            float inBuf[blockSize];
+            // WAV uses f32 format for 32 bit IEEE_FLOAT
+            while (true) {
+                const size_t read = reader->readSamples(inBuf, sizeof(inBuf));
+                const size_t samples = read / 4;
+                auto pDst = (float*)_this->stream.writeBuf;
+                auto pSrc = (float*)inBuf;
+                for (auto i=0; i < samples; i++) {
+                    *pDst++ = *pSrc;
+                    *pDst++ = *pSrc++;
+                }
+                if (!_this->process(samples)) {
+                    break;
+                }
+            }
+        } else if (fmtCode == WAVE_FORMAT::IEEE_FLOAT && fmtBits == 64) {
+            // WAV uses f64 format for 64 bit IEEE_FLOAT
+            double inBuf[blockSize];
+            while (true) {
+                const size_t read = reader->readSamples(inBuf, sizeof(inBuf));
+                const size_t samples = read / 8;
+                auto pDst = (float*)_this->stream.writeBuf;
+                auto pSrc = (double*)inBuf;
+                for (auto i=0; i < samples; i++) {
+                    *pDst++ = *pSrc;
+                    *pDst++ = *pSrc++;
+                }
+                if (!_this->process(samples)) {
+                    break;
+                }
+            }
+        } else if (fmtCode == WAVE_FORMAT::PCM && fmtBits == 8) {
+            // WAV uses u8 format for 8 bit PCM
+            const int32_t vzero = 0x80;
+            const float   scale = 0x7f;
+            const float   invScale = 1.0 / scale;
+            uint8_t inBuf[blockSize];
+            while (true) {
+                const size_t read = reader->readSamples(inBuf, sizeof(inBuf));
+                const size_t samples = read;
+                auto pDst = (float*)_this->stream.writeBuf;
+                auto pSrc = (uint8_t*)inBuf;
+                for (auto i=0; i < samples; i++) {
+                    auto sample = (*pSrc++ - vzero) * invScale;
+                    *pDst++ = sample;
+                    *pDst++ = sample;
+                }
+                if (!_this->process(samples)) {
+                    break;
+                }
+            }
+        } else if (fmtCode == WAVE_FORMAT::PCM && fmtBits == 16) {
+            // WAV uses i16 format for 16 bit PCM
+            const float scale = 0x7fff;
+            const float   invScale = 1.0 / scale;
+            int16_t inBuf[blockSize];
+            while (true) {
+                const size_t read = reader->readSamples(inBuf, sizeof(inBuf));
+                const size_t samples = read / 2;
+                auto pDst = (float*)_this->stream.writeBuf;
+                auto pSrc = (int16_t*)inBuf;
+                for (auto i=0; i < samples; i++) {
+                    float v = *pSrc++ * invScale;
+                    *pDst++ = v;
+                    *pDst++ = v;
+                }
+                if (!_this->process(samples)) {
+                    break;
+                }
+            }
+        } else if (fmtCode == WAVE_FORMAT::PCM && fmtBits == 24) {
+            // WAV uses i24 format for 24 bit PCM
+            const float scale = 0x7fffff;
+            const float invScale = 1.0 / scale;
+            uint8_t inBuf[blockSize * 3];
+            while (true) {
+                const size_t read = _this->_reader->readSamples(inBuf, sizeof(inBuf));
+                const size_t samples = read / 3;
+                // TODO: there is no volk function for i24 input format
+                auto pDst = (float*)_this->stream.writeBuf;
+                auto pSrc = (uint8_t*)inBuf;
+                for (auto i=0; i < samples * 2; i++) {
+                    int32_t v = *pSrc++ | (*pSrc++ << 8) | (*pSrc++ << 16); // read i24
+                    v = (v << 8) >> 8;                                      // sign extend
+                    float fv = v * invScale;                                          // scale
+                    *pDst++ = fv;
+                    *pDst++ = fv;
+                }
+                if (!_this->process(samples)) {
+                    break;
+                }
+            }
+        } else if (fmtCode == WAVE_FORMAT::PCM && fmtBits == 32) {
+            // WAV uses i32 format for 32 bit PCM
+            const float scale = 0x7fffffff;
+            const float   invScale = 1.0 / scale;
+            int32_t inBuf[blockSize];
+            while (true) {
+                const size_t read = reader->readSamples(inBuf, sizeof(inBuf));
+                const size_t samples = read / 4;
+                auto pDst = (float*)_this->stream.writeBuf;
+                auto pSrc = (int32_t*)inBuf;
+                for (auto i=0; i < samples; i++) {
+                    float v = *pSrc++ * invScale;
+                    *pDst++ = v;
+                    *pDst++ = v;
+                }
+                if (!_this->process(samples)) {
+                    break;
+                }
+            }
+        } else {
+            flog::error("FileSource: not supported sample format: {0}/{1}, {2} bit",
+                (int)fmtCode,
+                _this->_reader->getFormatName(),
+                fmtBits);
+        }
+        flog::info("FileSource: stop");
+    }
+
+    static void worker_2ch(void* ctx) {
         FileSourceModule* _this = (FileSourceModule*)ctx;
         int blockSize = std::min((int)(_this->_reader->getSampleRate()/200), (int)STREAM_BUFFER_SIZE);
         blockSize = std::max(1, blockSize);
@@ -316,7 +463,7 @@ private:
                 // volk_8u_s32f_convert_32f((float*)_this->stream.writeBuf, inBuf, (float)0x7f, samples * 2);
                 auto pDst = (float*)_this->stream.writeBuf;
                 auto pSrc = (uint8_t*)inBuf;
-                for (auto i=0; i < read; i++) {
+                for (auto i=0; i < samples*2; i++) {
                     *pDst++ = (*pSrc++ - vzero) * invScale;
                 }
                 if (!_this->process(samples)) {
@@ -346,7 +493,7 @@ private:
                 // TODO: there is no volk function for i24 input format
                 auto pDst = (float*)_this->stream.writeBuf;
                 auto pSrc = (uint8_t*)inBuf;
-                for (auto i=0; i < samples * 2; i++) {
+                for (auto i=0; i < samples*2; i++) {
                     int32_t v = *pSrc++ | (*pSrc++ << 8) | (*pSrc++ << 16); // read i24
                     v = (v << 8) >> 8;                                      // sign extend
                     *pDst++ = v * invScale;                                 // scale
