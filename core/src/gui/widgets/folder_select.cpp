@@ -63,7 +63,16 @@ bool FolderSelect::pathIsValid() {
 }
 
 void FolderSelect::worker() {
-    auto fold = pfd::select_folder("Select Folder", pathValid ? std::filesystem::path(expandString(path)).parent_path().string() : "");
+    auto expandedPath = expandString(path);
+    if (!std::filesystem::is_directory(std::filesystem::path(expandedPath).parent_path().string())) {
+        expandedPath = "";
+    }
+    if (!expandedPath.empty() &&
+        !std::filesystem::is_regular_file(expandedPath) &&
+        expandedPath.back() != std::filesystem::path::preferred_separator) {
+        expandedPath = expandedPath + std::filesystem::path::preferred_separator;
+    }
+    auto fold = pfd::select_folder("Select Folder", expandedPath);
     std::string res = fold.result();
 
     if (res != "") {

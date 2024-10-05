@@ -64,7 +64,11 @@ bool FileSelect::pathIsValid() {
 }
 
 void FileSelect::worker() {
-    auto file = pfd::open_file("Open File", pathValid ? std::filesystem::path(expandString(path)).parent_path().string() : "", _filter);
+    auto expandedPath = expandString(path);
+    if (!std::filesystem::is_directory(std::filesystem::path(expandedPath).parent_path().string())) {
+        expandedPath = "";
+    }
+    auto file = pfd::open_file("Open File", expandedPath, _filter);
     std::vector<std::string> res = file.result();
 
     if (res.size() > 0) {
