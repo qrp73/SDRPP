@@ -124,8 +124,8 @@ public:
         const double sscale = 1.0 / pow(10, 120/20);
         auto in = xorshift32(&lfsr) & 1 ? -nscale : nscale;
         auto qn = xorshift32(&lfsr) & 1 ? -nscale : nscale;
-        auto is0 = 1.0;//cos(fi);
-        auto qs0 = 0.0;//sin(fi);
+        auto is0 = cos(fi);//1.0;//cos(fi);
+        auto qs0 = sin(fi);//0.0;//sin(fi);
         fi += df;
         df += 0.0000001;
         if (df >= 2*M_PI)
