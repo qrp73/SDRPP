@@ -64,10 +64,14 @@ namespace backend {
             flog::error("SDL_Init() failed: {}", SDL_GetError());
             return -1;
         }
+        flog::info("SDL_GetCurrentVideoDriver(): {}", (const char*)SDL_GetCurrentVideoDriver());
 
         // Check if we are running on KMS DRM
-        // TODO: is there a better way?
-        isKmsDrm = std::getenv("DISPLAY") == NULL;
+        const char* videoDriver = SDL_GetCurrentVideoDriver();
+        isKmsDrm = videoDriver && std::equal(
+            videoDriver, videoDriver + std::strlen(videoDriver), "kmsdrm",
+            [](char a, char b) { return std::tolower(a) == std::tolower(b); }
+        );        
         if (isKmsDrm) {
             flog::info("KMS DRM mode detected");
         }
