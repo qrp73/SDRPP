@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <utils/optionlist.h>
+#include <math.h>
 
 
 // Fixed point test vectors
@@ -49,6 +50,7 @@ const int64_t _14bitSineHamsterNZ_overflow[] { 1236,  4249,  6615,  7974,  8119,
 
 class TableSource {
 private:
+    int  _type;
     float* _data;
     int  _leng;
     int  _phase;
@@ -57,7 +59,7 @@ public:
     float I, Q;
     
     TableSource()
-        : _data(NULL), _leng(-1), _phase(0), I(0), Q(0) {
+        : _type(-1), _data(NULL), _leng(-1), _phase(0), I(0), Q(0) {
     }
     ~TableSource() {
         free();
@@ -90,8 +92,63 @@ public:
             _data[i] = v * scale;
         }
     }
-    
+
+    double fi = 0;
+    double df = 0;
+    double fi2 = 0;
+    double df2 = 0;
+    uint32_t lfsr = 0xACE1;
+
+    void init_oscillator(double freq) {
+        df = 2.0 * M_PI * freq;
+        fi = 0.0;
+        df2 = 2.0 * M_PI / sqrt(51);
+        fi2 = 0.0;
+        lfsr = 0xACE1;
+    }
+
+    inline uint32_t xorshift32(uint32_t *state)
+    {
+        /* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
+        uint32_t x = *state;
+        x ^= x << 13;
+        x ^= x >> 17;
+        x ^= x << 5;
+        return *state = x;
+    }
+
+    bool isSignalEnabled = false;
+
+    void next_oscillator() {
+        const double nscale = 1.0 / pow(10, (130-30)/20);
+        const double sscale = 1.0 / pow(10, 120/20);
+        auto in = xorshift32(&lfsr) & 1 ? -nscale : nscale;
+        auto qn = xorshift32(&lfsr) & 1 ? -nscale : nscale;
+        auto is0 = 1.0;//cos(fi);
+        auto qs0 = 0.0;//sin(fi);
+        fi += df;
+        df += 0.0000001;
+        if (df >= 2*M_PI)
+            df -= 2*M_PI;
+        if (fi >= 2 * M_PI)
+            fi -= 2 * M_PI;
+        if (isSignalEnabled) {
+            auto is1 = cos(fi2) * sscale;
+            auto qs1 = sin(fi2) * sscale;
+            fi2 += df2;
+            if (fi2 >= 2 * M_PI)
+                fi2 -= 2 * M_PI;
+            I = in+is0+is1;
+            Q = qn+qs0+qs1;
+        } else {
+            I = in+is0;
+            Q = qn+qs0;
+        }
+    }
+
     void next() {
+        if (_type == 10)
+            return next_oscillator();
         if (_leng < 0)
             return;
         I = _data[_phase++];
@@ -101,6 +158,7 @@ public:
     }
     
     void setSource(int index) {
+        _type = index;
         switch (index) {
             case 0: init_dc(0, 0); break;
             case 1: init_dc(+1, 0); break;
@@ -112,6 +170,7 @@ public:
             case 7: init(14, _14bitSomeone_sfdr119_56dB, 16); break;
             case 8: init(14, _14bitSineHamsterNZ4, 16); break;
             case 9: init(14, _14bitSineHamsterNZ_overflow, 16); break;
+            case 10: init_oscillator(0.2); break;
         }
     }
 };
@@ -169,7 +228,8 @@ public:
         _waveTypes.define(7, "14bit SFDR=119.56 dB (Someone)", 7);
         _waveTypes.define(8, "14bit SineHamsterNZ4", 8);
         _waveTypes.define(9, "14bit SineHamsterNZ overflow", 9);
-        
+        _waveTypes.define(10, "Oscillator", 10);
+
 
         config.acquire();
         for (auto const& item : config.conf["sampleRates"]) {
@@ -329,10 +389,11 @@ private:
         blockSize = std::max(1, blockSize);
         flog::info("TestSource: blockSize={0}", blockSize);
 
+        auto src = &_this->_src;
         // Left=I, Right=Q
         while (true) {
+            src->isSignalEnabled = (clock()*1000 / CLOCKS_PER_SEC) & 0x400;
             auto pDst = (float*)_this->_stream.writeBuf;
-            auto src = &_this->_src;
             for (auto i=0; i < blockSize; i++) {
                 *pDst++ = src->I;
                 *pDst++ = src->Q;
