@@ -33,7 +33,7 @@ Have good day and 73
 
 ## SDL2 Wayland
 
-By default, SDL2 uses the X11 driver if X11 or X11Wayland is available on the system. To run the application with the Wayland driver, you need to set the environment variable SDL_VIDEODRIVER=wayland. For example, run the following in the terminal: 
+By default, SDL2 uses the X11 driver if X11 or XWayland is available on the system. To run the application with the Wayland driver, you need to set the environment variable SDL_VIDEODRIVER=wayland. For example, run the following in the terminal: 
 
 ```
 SDL_VIDEODRIVER=wayland sdrpp
