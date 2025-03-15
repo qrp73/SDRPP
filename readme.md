@@ -55,6 +55,33 @@ SDL_VIDEODRIVER=wayland SDL_VIDEO_ALLOW_SCREENSAVER=1 sdrpp
 and place it into ```/usr/local/bin``` with execute permission.
 
 
+You can check if the SDL2 backend is being used by running the application in the terminal and looking for the line ```SDL_GetCurrentVideoDriver():``` in the log. This line shows the driver that is actually being used. For example:
+```
+$ SDL_VIDEODRIVER=wayland sdrpp
+[15/03/2025 09:29:32.000] [INFO] SDR++ v1.1.0
+[15/03/2025 09:29:32.000] [INFO] Loading config
+[15/03/2025 09:29:32.000] [WARN] ConfigManager locked, waiting...
+[15/03/2025 09:29:32.000] [INFO] SDL_GetCurrentVideoDriver(): wayland
+[15/03/2025 09:29:32.000] [INFO] OpenGL: OpenGL ES 3.1 Mesa 24.2.8-1~bpo12+rpt1
+[15/03/2025 09:29:32.000] [INFO] GLSL:   OpenGL ES GLSL ES 3.10
+[15/03/2025 09:29:32.000] [INFO] GL_SAMPLES: 0
+[15/03/2025 09:29:32.000] [INFO] Loading icons
+```
+
+
+## SDL2 KMSDRM mode
+
+If you are running the application on a system without a graphical desktop (X11, Wayland), SDL2 will automatically select the KMSDRM driver. However, if you are running the application from a virtual terminal with a background-running graphical manager, it may prevent SDL2 from correctly detecting the driver. 
+
+In this case, you can force SDL2 to use the KMSDRM driver by specifying it explicitly with environment variable for application:
+```
+SDL_VIDEODRIVER=kmsdrm sdrpp
+```
+
+You can exit the application in KMSDRM mode using the ```Alt+F4``` key combination.
+
+
+
 ## Hardware
 
 The only hardware that I have is RTLSDRv3 and custom FPGA DSP chains for different hardware which are using my custom or HPSDR protocol. So, this project is targeted primary on RTLSDRv3 and HPSDR protocol devices. But feel free to report issues with other hardware.
