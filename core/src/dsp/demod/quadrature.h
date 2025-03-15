@@ -4,6 +4,8 @@
 #include "../math/hz_to_rads.h"
 #include "../math/normalize_phase.h"
 
+#define USE_QUAD_FM_DEMOD 1
+
 namespace dsp::demod {
     class Quadrature : public Processor<complex_t, float> {
         using base_type = Processor<complex_t, float>;
@@ -38,9 +40,17 @@ namespace dsp::demod {
 
         inline int process(int count, complex_t* in, float* out) {
             for (int i = 0; i < count; i++) {
+#if !defined(USE_QUAD_FM_DEMOD) || (USE_QUAD_FM_DEMOD == 0)
+                // Differential Phase FM Demodulation
                 float cphase = in[i].phase();
                 out[i] = math::normalizePhase(cphase - phase) * _invDeviation;
                 phase = cphase;
+#else                
+                // Quadrature FM Demodulation
+                auto y = in[i];
+                out[i] = (y * _din.conj()).phase() * _invDeviation;
+                _din = y;
+#endif                
             }
             return count;
         }
@@ -48,7 +58,12 @@ namespace dsp::demod {
         void reset() {
             assert(base_type::_block_init);
             std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
+#if !defined(USE_QUAD_FM_DEMOD) || (USE_QUAD_FM_DEMOD == 0)
             phase = 0.0f;
+#else
+            _din.re = 0.0;
+            _din.im = 0.0;
+#endif
         }
 
         int run() {
@@ -64,6 +79,10 @@ namespace dsp::demod {
 
     protected:
         float _invDeviation;
+#if !defined(USE_QUAD_FM_DEMOD) || (USE_QUAD_FM_DEMOD == 0)
         float phase = 0.0f;
+#else
+       complex_t _din;
+#endif
     };
 }
