@@ -13,7 +13,7 @@ Have good day and 73
 
 ## Features
 
-- added SDL2 OpenGL ES backend (can be enabled in cmake) which supports Linux KMS DRM mode, it can run without desktop. Tested on Raspberry Pi Zero 2W.
+- added SDL2 OpenGL ES backend (enabled by default) which supports Linux KMS DRM mode, it can run without desktop. Tested on Raspberry Pi Zero 2W.
 - fixed waterfall zoom
 - SNR meter replaced with level meter + level and SNR text indication 
 - unity gain for FFT and window functions
@@ -30,6 +30,27 @@ Have good day and 73
 - recorder: added 24-bit PCM support
 - frequency_manager: fixed jittery label position
 - some minor fixes
+
+## SDL2 Wayland
+
+By default, SDL2 uses the X11 driver if X11 or X11Wayland is available on the system. To run the application with the Wayland driver, you need to set the environment variable SDL_VIDEODRIVER=wayland. For example, run the following in the terminal: 
+
+```
+SDL_VIDEODRIVER=wayland sdrpp
+``` 
+
+This will launch the application using the Wayland driver, which provides about a 20% performance boost compared to the X11 driver.
+
+Additionally, note that SDL2 blocks the Wayland screensaver (idle). To allow the screensaver to function while the application is running, you should set the environment variable SDL_VIDEO_ALLOW_SCREENSAVER=1 for the application.
+
+You can create the following bash script sdrpp-wayland to run the application with Wayland driver:
+```
+#!/usr/bin/env bash
+
+SDL_VIDEODRIVER=wayland SDL_VIDEO_ALLOW_SCREENSAVER=1 sdrpp
+
+```
+and place it into ```/usr/local/bin``` with execute permission.
 
 
 ## Hardware
