@@ -31,7 +31,9 @@ Have good day and 73
 - frequency_manager: fixed jittery label position
 - some minor fixes
 
-## SDL2 Wayland
+## SDL2 Wayland mode
+
+Using the Wayland driver allows for smoother graphics with less CPU load. This is especially useful for low-power computers. For example, it provides smoother graphics with reduced CPU usage when running on Raspberry Pi OS Bookworm with the Wayland Labwc or Wayland Wayfire compositor.
 
 By default, SDL2 uses the X11 driver if X11 or XWayland is available on the system. To run the application with the Wayland driver, you need to set the environment variable SDL_VIDEODRIVER=wayland. For example, run the following in the terminal: 
 
