@@ -30,8 +30,8 @@
 SDRPP_MOD_INFO{
     /* Name:            */ "recorder",
     /* Description:     */ "Recorder module for SDR++",
-    /* Author:          */ "Ryzerth",
-    /* Version:         */ 0, 3, 0,
+    /* Author:          */ "qrp73, Ryzerth",
+    /* Version:         */ 1, 0, 0,
     /* Max instances    */ -1
 };
 
@@ -46,7 +46,8 @@ public:
 
         // Define option lists
         containers.define("WAV", wav::FORMAT_WAV);
-        // containers.define("RF64", wav::FORMAT_RF64); // Disabled for now
+        containers.define("FLAC", wav::FORMAT_FLAC);
+        
         sampleTypes.define(wav::SAMP_TYPE_UINT8,    "8-bit PCM", wav::SAMP_TYPE_UINT8);
         sampleTypes.define(wav::SAMP_TYPE_INT16,   "16-bit PCM", wav::SAMP_TYPE_INT16);
         sampleTypes.define(wav::SAMP_TYPE_INT24,   "24-bit PCM", wav::SAMP_TYPE_INT24);
@@ -171,7 +172,7 @@ public:
         // Open file
         std::string type = (recMode == RECORDER_MODE_AUDIO) ? "audio" : "baseband";
         std::string vfoName = (recMode == RECORDER_MODE_AUDIO) ? selectedStreamName : "";
-        std::string extension = ".wav";
+        std::string extension = writer.getFileExtension();
         std::string expandedPath = expandString(folderSelect.path + "/" + genFileName(nameTemplate, type, vfoName) + extension);
         if (!writer.open(expandedPath)) {
             flog::error("Failed to open file for recording: {0}", expandedPath);

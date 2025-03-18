@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.13...3.25.1)
 project(sdrpp)
 
+list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 # Backends
 option(OPT_BACKEND_GLFW "Use the GLFW backend" OFF)
 option(OPT_BACKEND_ANDROID "Use the Android backend" OFF)

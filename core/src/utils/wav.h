@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <mutex>
 #include "riff.h"
+#include <FLAC/stream_encoder.h>
+
 
 namespace wav {    
     #pragma pack(push, 1)
@@ -19,7 +21,7 @@ namespace wav {
 
     enum Format {
         FORMAT_WAV,
-        FORMAT_RF64
+        FORMAT_FLAC,
     };
 
     enum SampleType {
@@ -48,6 +50,8 @@ namespace wav {
         void setSamplerate(uint64_t samplerate);
         void setFormat(Format format);
         void setSampleType(SampleType type);
+        
+        std::string getFileExtension();
 
         size_t getSamplesWritten() { return samplesWritten; }
 
@@ -55,14 +59,18 @@ namespace wav {
 
     private:
         std::recursive_mutex mtx;
+        FLAC__StreamEncoder* _flacEncoder = nullptr;
         FormatHeader hdr;
         riff::Writer rw;
+
+        bool isOpenInt();
 
         int _channels;
         uint64_t _samplerate;
         Format _format;
         SampleType _type;
         size_t bytesPerSamp;
+        double _halfRangeM1;
 
         uint8_t* bufU8 = NULL;
         int16_t* bufI16 = NULL;
