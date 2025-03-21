@@ -5,6 +5,7 @@
 #include <mutex>
 #include "riff.h"
 #include <FLAC/stream_encoder.h>
+#include <lame/lame.h>
 
 
 namespace wav {    
@@ -22,6 +23,7 @@ namespace wav {
     enum Format {
         FORMAT_WAV,
         FORMAT_FLAC,
+        FORMAT_MP3,
     };
 
     enum SampleType {
@@ -59,7 +61,12 @@ namespace wav {
 
     private:
         std::recursive_mutex mtx;
+        // MP3
+        lame_t _lame = nullptr;
+        std::vector<uint8_t> _mp3Buffer;
+        // FLAC
         FLAC__StreamEncoder* _flacEncoder = nullptr;
+        //WAV
         FormatHeader hdr;
         riff::Writer rw;
 

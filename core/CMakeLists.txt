@@ -181,6 +181,13 @@ else()
 
 endif ()
 
+find_package(FLAC REQUIRED)
+target_link_libraries(sdrpp_core PUBLIC FLAC::FLAC)
+
+find_package(mp3lame REQUIRED)
+target_link_libraries(sdrpp_core PUBLIC mp3lame::mp3lame)
+
+
 set(CORE_FILES ${RUNTIME_OUTPUT_DIRECTORY} PARENT_SCOPE)
 
 # cmake .. "-DCMAKE_TOOLCHAIN_FILE=C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake"

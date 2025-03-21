@@ -10,6 +10,7 @@
 
 
 namespace wav {
+    const char* MP3_FILE_TYPE           = "MP3 ";
     const char* WAVE_FILE_TYPE          = "WAVE";
     const char* FORMAT_MARKER           = "fmt ";
     const char* DATA_MARKER             = "data";
@@ -46,7 +47,7 @@ namespace wav {
     bool Writer::open(std::string path) {
         std::lock_guard<std::recursive_mutex> lck(mtx);
         // Close previous file
-        if (_flacEncoder || rw.isOpen()) { close(); }
+        if (_lame || _flacEncoder || rw.isOpen()) { close(); }
 
         // Reset work values
         samplesWritten = 0;
@@ -54,6 +55,32 @@ namespace wav {
         auto bitsPerSample = SAMP_BITS[_type];
         _halfRangeM1 = pow(2, bitsPerSample - 1) - 1.0;
         
+        if (_format == FORMAT_MP3) {
+            if (_channels != 1 && _channels != 2) {
+                flog::error("not supported channel count for MP3: {}", (int)_channels);
+                return false;
+            }
+            _lame = lame_init();
+            if (!_lame) {
+                flog::error("lame_init() failed");
+                return false;
+            }
+            lame_set_num_channels(_lame, _channels);
+            lame_set_in_samplerate(_lame, _samplerate);
+            lame_set_quality(_lame, 2); // 2 - high quality
+            lame_set_VBR(_lame, vbr_default);
+            //lame_set_VBR(_lame, vbr_off);
+            //lame_set_brate(_lame, 192);
+            if (lame_init_params(_lame) < 0) {
+                flog::error("lame_init_params() failed");
+                lame_close(_lame);
+                _lame = nullptr;
+                return false;
+            }
+            _mp3Buffer.resize(1.25 * STREAM_BUFFER_SIZE + 7200);
+            rw.open(path, MP3_FILE_TYPE);
+            return rw.isOpen();
+        }        
         if (_format == FORMAT_FLAC) {
             if (!isIntegerSampleType(_type)) {
                 flog::error("not supported sample format for FLAC: {}", (int)_type);
@@ -125,6 +152,7 @@ namespace wav {
     }
 
     bool Writer::isOpenInt() {
+        if (_format == FORMAT_MP3) return _lame != nullptr;
         if (_format == FORMAT_FLAC) return _flacEncoder != nullptr;
         if (_format == FORMAT_WAV) return rw.isOpen();
         return false;
@@ -138,6 +166,13 @@ namespace wav {
     void Writer::close() {
         std::lock_guard<std::recursive_mutex> lck(mtx);
         
+        if (_lame) {
+            int bytes = lame_encode_flush(_lame, _mp3Buffer.data(), _mp3Buffer.size());
+            if (bytes > 0) rw.write(_mp3Buffer.data(), bytes);
+            lame_close(_lame);
+            _lame = nullptr;
+            if (rw.isOpen()) rw.close();
+        }
         if (_flacEncoder) {
             FLAC__stream_encoder_finish(_flacEncoder);
             FLAC__stream_encoder_delete(_flacEncoder);
@@ -204,8 +239,9 @@ namespace wav {
     
     std::string Writer::getFileExtension() {
         switch (_format) {
+            case FORMAT_MP3:  return ".mp3";
             case FORMAT_FLAC: return ".flac";
-            case FORMAT_WAV: return ".wav";
+            case FORMAT_WAV:  return ".wav";
             default: return ".wav";
         }
     }
@@ -223,6 +259,21 @@ namespace wav {
     void Writer::write(float* samples, int count) {
         std::lock_guard<std::recursive_mutex> lck(mtx);
         
+        if (_format == FORMAT_MP3 && _lame) {
+            std::vector<int16_t> pcmSamples(count * _channels);
+            for (int i = 0; i < count * _channels; i++) {
+                pcmSamples[i] = (int16_t)roundToLong(std::clamp(samples[i], -1.0f, 1.0f) * 32767);
+            }
+            int bytes = 0;
+            if (_channels == 1) {
+                bytes = lame_encode_buffer(_lame, pcmSamples.data(), nullptr, count, _mp3Buffer.data(), _mp3Buffer.size());
+            } else {
+                bytes = lame_encode_buffer_interleaved(_lame, pcmSamples.data(), count, _mp3Buffer.data(), _mp3Buffer.size());
+            }            
+            if (bytes > 0) rw.write(_mp3Buffer.data(), bytes);
+            samplesWritten += count;
+            return;
+        }        
         if (_format == FORMAT_FLAC && _flacEncoder) {
             std::vector<int32_t> pcmSamples(count * _channels);
             for (int i = 0; i < count * _channels; i++) {

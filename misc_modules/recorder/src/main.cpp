@@ -47,6 +47,7 @@ public:
         // Define option lists
         containers.define("WAV", wav::FORMAT_WAV);
         containers.define("FLAC", wav::FORMAT_FLAC);
+        containers.define("MP3", wav::FORMAT_MP3);
         
         sampleTypes.define(wav::SAMP_TYPE_UINT8,    "8-bit PCM", wav::SAMP_TYPE_UINT8);
         sampleTypes.define(wav::SAMP_TYPE_INT16,   "16-bit PCM", wav::SAMP_TYPE_INT16);
@@ -278,12 +279,14 @@ private:
             config.release(true);
         }
 
-        ImGui::LeftLabel("Sample type");
-        ImGui::FillWidth();
-        if (ImGui::Combo(CONCAT("##_recorder_st_", _this->name), &_this->sampleTypeId, _this->sampleTypes.txt)) {
-            config.acquire();
-            config.conf[_this->name]["sampleType"] = _this->sampleTypes.key(_this->sampleTypeId);
-            config.release(true);
+        if (_this->containers[_this->containerId] != wav::FORMAT_MP3) {
+            ImGui::LeftLabel("Sample type");
+            ImGui::FillWidth();
+            if (ImGui::Combo(CONCAT("##_recorder_st_", _this->name), &_this->sampleTypeId, _this->sampleTypes.txt)) {
+                config.acquire();
+                config.conf[_this->name]["sampleType"] = _this->sampleTypes.key(_this->sampleTypeId);
+                config.release(true);
+            }
         }
 
         // Show additional audio options

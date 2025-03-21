@@ -29,6 +29,7 @@ Have good day and 73
 - recorder: fixed default filename pattern
 - recorder: added 24-bit PCM support
 - recorder: added FLAC container support (8/16/24/32 bit mono/stereo, see libflac for supported sample rates)
+- recorder: added MP3 container support (VBR)
 - frequency_manager: fixed jittery label position
 - some minor fixes
 
@@ -106,7 +107,7 @@ sudo apt install -y \
    git wget p7zip-full build-essential cmake cmake-curses-gui libtool xxd autoconf \
    libfftw3-dev libglfw3-dev libglew-dev libvolk2-dev libsoapysdr-dev libairspyhf-dev libairspy-dev \
    libiio-dev libad9361-dev librtaudio-dev libhackrf-dev librtlsdr-dev libbladerf-dev liblimesuite-dev \
-   libcodec2-dev libzstd-dev portaudio19-dev libsdl2-dev libflac-dev
+   libcodec2-dev libzstd-dev portaudio19-dev libsdl2-dev libflac-dev libmp3lame-dev
 ```
 If `libvolk2-dev` is not available, use `libvolk1-dev`.
 
