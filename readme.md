@@ -15,7 +15,8 @@ Have good day and 73
 
 - added SDL2 OpenGL ES backend (enabled by default) which supports Linux KMS DRM mode, it can run without desktop. Tested on Raspberry Pi Zero 2W.
 - fixed waterfall zoom
-- SNR meter replaced with level meter + level and SNR text indication 
+- SNR meter replaced with level meter + level and SNR text indication
+   ![20250322_02h03m00s_grim](https://github.com/user-attachments/assets/0eea978c-1f0f-4789-be70-9b47ffc884de)
 - unity gain for FFT and window functions
 - added Blackman-Harris-7, Blackman-Harris-4, Hamming and Hann window functions
 - added 1M FFT
