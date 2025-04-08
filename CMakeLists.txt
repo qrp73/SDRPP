@@ -84,9 +84,9 @@ else()
     if (MSVC)
         set(SDRPP_COMPILER_FLAGS /O2 /Ob2 /std:c++17 /EHsc)
     elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        set(SDRPP_COMPILER_FLAGS -O3 -std=c++17 -Wno-unused-command-line-argument -undefined dynamic_lookup)
+        set(SDRPP_COMPILER_FLAGS -O3 -ftree-vectorize -std=c++17 -Wno-unused-command-line-argument -undefined dynamic_lookup)
     else ()
-        set(SDRPP_COMPILER_FLAGS -O3 -std=c++17)
+        set(SDRPP_COMPILER_FLAGS -O3 -ftree-vectorize -std=c++17)
     endif ()
 endif()
 set(SDRPP_MODULE_COMPILER_FLAGS ${SDRPP_COMPILER_FLAGS})
@@ -331,3 +331,32 @@ endif ()
 # Create uninstall target
 configure_file(${CMAKE_SOURCE_DIR}/cmake_uninstall.cmake ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake @ONLY)
 add_custom_target(uninstall ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+
+
+if(NOT WIN32)
+  string(ASCII 27 Esc)
+  set(ColourReset "${Esc}[m")
+  set(ColourBold  "${Esc}[1m")
+  set(Red         "${Esc}[31m")
+  set(Green       "${Esc}[32m")
+  set(Yellow      "${Esc}[33m")
+  set(Blue        "${Esc}[34m")
+  set(Magenta     "${Esc}[35m")
+  set(Cyan        "${Esc}[36m")
+  set(White       "${Esc}[37m")
+  set(BoldRed     "${Esc}[1;31m")
+  set(BoldGreen   "${Esc}[1;32m")
+  set(BoldYellow  "${Esc}[1;33m")
+  set(BoldBlue    "${Esc}[1;34m")
+  set(BoldMagenta "${Esc}[1;35m")
+  set(BoldCyan    "${Esc}[1;36m")
+  set(BoldWhite   "${Esc}[1;37m")
+endif()
+add_custom_target(print_vars
+    COMMAND ${CMAKE_COMMAND} -E echo "${BoldYellow}CMAKE_C_COMPILER:   ${ColourReset} ${CMAKE_C_COMPILER}"
+    COMMAND ${CMAKE_COMMAND} -E echo "${BoldYellow}CMAKE_CXX_COMPILER: ${ColourReset} ${CMAKE_CXX_COMPILER}"
+    COMMAND ${CMAKE_COMMAND} -E echo "${BoldYellow}COMPILE_OPTIONS:    ${ColourReset} $<TARGET_PROPERTY:sdrpp,COMPILE_OPTIONS>"
+    COMMAND ${CMAKE_COMMAND} -E echo "${BoldYellow}CMAKE_BUILD_TYPE:   ${ColourReset} ${CMAKE_BUILD_TYPE}"
+    VERBATIM
+)
+add_dependencies(sdrpp print_vars)
