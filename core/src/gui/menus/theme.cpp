@@ -7,12 +7,20 @@ namespace thememenu {
     int themeId;
     std::vector<std::string> themeNames;
     std::string themeNamesTxt;
+    bool themeAntiAliasedLines = true;
+    bool themeAntiAliasedFill = true;
 
     void init(std::string resDir) {
         // TODO: Not hardcode theme directory
         gui::themeManager.loadThemesFromDir(resDir + "/themes/");
         core::configManager.acquire();
         std::string selectedThemeName = core::configManager.conf["theme"];
+        themeAntiAliasedLines = core::configManager.conf.contains("themeAntiAliasedLines") ?
+            core::configManager.conf["themeAntiAliasedLines"].get<bool>() :
+            ImGui::GetStyle().AntiAliasedLines;
+        themeAntiAliasedFill = core::configManager.conf.contains("themeAntiAliasedFill") ?
+            core::configManager.conf["themeAntiAliasedFill"].get<bool>() :
+            ImGui::GetStyle().AntiAliasedFill;
         core::configManager.release();
 
         // Select theme by name, if not available, apply Dark theme
@@ -27,6 +35,8 @@ namespace thememenu {
 
         // Apply scaling
         ImGui::GetStyle().ScaleAllSizes(style::uiScale);
+        ImGui::GetStyle().AntiAliasedLines = themeAntiAliasedLines;
+        ImGui::GetStyle().AntiAliasedFill = themeAntiAliasedFill;
 
         themeNamesTxt = "";
         for (auto name : themeNames) {
@@ -35,9 +45,9 @@ namespace thememenu {
         }
     }
 
-     void applyTheme() {
-         gui::themeManager.applyTheme(themeNames[themeId]);
-     }
+    void applyTheme() {
+        gui::themeManager.applyTheme(themeNames[themeId]);
+    }
 
     void draw(void* ctx) {
         float menuWidth = ImGui::GetContentRegionAvail().x;
@@ -49,5 +59,17 @@ namespace thememenu {
             core::configManager.conf["theme"] = themeNames[themeId];
             core::configManager.release(true);
         }
+        if (ImGui::Checkbox("AntiAliased Lines", &themeAntiAliasedLines)) {
+            ImGui::GetStyle().AntiAliasedLines = themeAntiAliasedLines;
+            core::configManager.acquire();
+            core::configManager.conf["themeAntiAliasedLines"] = themeAntiAliasedLines;
+            core::configManager.release(true);
+        }        
+        if (ImGui::Checkbox("AntiAliased Fill", &themeAntiAliasedFill)) {
+            ImGui::GetStyle().AntiAliasedFill = themeAntiAliasedFill;
+            core::configManager.acquire();
+            core::configManager.conf["themeAntiAliasedFill"] = themeAntiAliasedFill;
+            core::configManager.release(true);
+        }        
     }
 }

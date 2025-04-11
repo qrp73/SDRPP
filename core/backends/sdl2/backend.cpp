@@ -165,9 +165,6 @@ namespace backend {
         // Setup Dear ImGui style
         ImGui::StyleColorsDark();
         //ImGui::StyleColorsLight();
-        
-        ImGui::GetStyle().AntiAliasedLines = false;
-        
 
         // Setup Platform/Renderer backends
         if (!ImGui_ImplSDL2_InitForOpenGL(window, gl_context))

@@ -218,6 +218,8 @@ int sdrpp_main(int argc, char* argv[]) {
 
     // Themes
     defConfig["theme"] = "Dark";
+    defConfig["themeAntiAliasedLines"] = true;
+    defConfig["themeAntiAliasedFill"] = true;
 #ifdef __ANDROID__
     defConfig["uiScale"] = 3.0f;
 #else
@@ -305,7 +307,7 @@ int sdrpp_main(int argc, char* argv[]) {
     // Fix missing elements in config
     for (auto const& item : defConfig.items()) {
         if (!core::configManager.conf.contains(item.key())) {
-            flog::info("Missing key in config {0}, repairing", item.key());
+            flog::warn("Missing key in config {0}, repairing", item.key());
             core::configManager.conf[item.key()] = defConfig[item.key()];
         }
     }
@@ -314,7 +316,7 @@ int sdrpp_main(int argc, char* argv[]) {
     auto items = core::configManager.conf.items();
     for (auto const& item : items) {
         if (!defConfig.contains(item.key())) {
-            flog::info("Unused key in config {0}, repairing", item.key());
+            flog::warn("Unused key in config {0}, repairing", item.key());
             core::configManager.conf.erase(item.key());
         }
     }
