@@ -53,7 +53,7 @@ namespace wav {
         samplesWritten = 0;
         bytesPerSamp = (SAMP_BITS[_type] / 8) * _channels;
         auto bitsPerSample = SAMP_BITS[_type];
-        _halfRangeM1 = pow(2, bitsPerSample - 1) - 1.0;
+        _halfRangeMH = (double)(1L<<(bitsPerSample-1)) - 0.5d;
         
         if (_format == FORMAT_MP3) {
             if (_channels != 1 && _channels != 2) {
@@ -246,23 +246,14 @@ namespace wav {
         }
     }
 
-    // fast rounding double to int
-    static inline int64_t roundToLong(double value)
-    {
-        value += 6755399441055744.0;
-        int64_t v = *(int64_t*)&value;
-        v <<= 13;
-        v >>= 13;
-        return v;
-    }
-
     void Writer::write(float* samples, int count) {
         std::lock_guard<std::recursive_mutex> lck(mtx);
         
         if (_format == FORMAT_MP3 && _lame) {
             std::vector<int16_t> pcmSamples(count * _channels);
-            for (int i = 0; i < count * _channels; i++) {
-                pcmSamples[i] = (int16_t)roundToLong(std::clamp(samples[i], -1.0f, 1.0f) * 32767);
+            int sampelCount = count * _channels;
+            for (int i = 0; i < sampelCount; i++) {
+                pcmSamples[i] = (int16_t)lroundf(std::clamp(samples[i], -1.0f, 1.0f) * (32768.0f - 0.5f) - 0.5f);
             }
             int bytes = 0;
             if (_channels == 1) {
@@ -276,8 +267,9 @@ namespace wav {
         }        
         if (_format == FORMAT_FLAC && _flacEncoder) {
             std::vector<int32_t> pcmSamples(count * _channels);
-            for (int i = 0; i < count * _channels; i++) {
-                pcmSamples[i] = (int32_t)roundToLong(std::clamp(samples[i], -1.0f, 1.0f) * _halfRangeM1);
+            int sampelCount = count * _channels;
+            for (int i = 0; i < sampelCount; i++) {
+                pcmSamples[i] = (int32_t)lroundf(std::clamp(samples[i], -1.0f, 1.0f) * _halfRangeMH - 0.5d);
             }
             if (!FLAC__stream_encoder_process_interleaved(_flacEncoder, pcmSamples.data(), count)) {
                 flog::error("FLAC__stream_encoder_process_interleaved() failed");
@@ -288,39 +280,44 @@ namespace wav {
         
         if (_format == FORMAT_WAV && rw.isOpen()) {
             // Select different writer function depending on the chose depth
-            int tcount = count * _channels;
-            int tbytes = count * bytesPerSamp;
+            int sampelCount = count * _channels;
+            int bytesCount = count * bytesPerSamp;
             switch (_type) {
                 case SAMP_TYPE_UINT8:
-                    // Volk doesn't support unsigned ints yet :/
-                    for (int i = 0; i < tcount; i++) {
-                        bufU8[i] = (samples[i] * 0x7f) + 0x80;
+                    for (int i = 0; i < sampelCount; i++) {
+                        bufU8[i] = (uint8_t)lroundf(std::clamp(samples[i], -1.0f, 1.0f) * (128.0f - 0.5f) - 0.5f + 128);
                     }
-                    rw.write(bufU8, tbytes);
+                    rw.write(bufU8, bytesCount);
                     break;
                 case SAMP_TYPE_INT16:
-                    volk_32f_s32f_convert_16i(bufI16, samples, 0x7fff, tcount);
-                    rw.write((uint8_t*)bufI16, tbytes);
+                    //volk_32f_s32f_convert_16i(bufI16, samples, 0x7fff, tcount);
+                    for (int i = 0; i < sampelCount; i++) {
+                        bufI16[i] = (int16_t)lroundf(std::clamp(samples[i], -1.0f, 1.0f) * (32768.0f - 0.5f) - 0.5f);
+                    }
+                    rw.write((uint8_t*)bufI16, bytesCount);
                     break;
                 case SAMP_TYPE_INT24:
                     {
                         auto pDst = (uint8_t*)bufI24;
-                        for (auto i = 0; i < tcount; i++) {
-                            int32_t v = (int32_t)(samples[i] * 0x7fffff);
-                            pDst[0] = (uint8_t)v;
-                            pDst[1] = (uint8_t)(v >> 8);
-                            pDst[2] = (uint8_t)(v >> 16);
+                        for (int i = 0; i < sampelCount; i++) {
+                            int32_t i24 = (int32_t)lroundf(std::clamp(samples[i], -1.0f, 1.0f) * (8388608.0f - 0.5f) - 0.5f);
+                            pDst[0] = (uint8_t)i24;
+                            pDst[1] = (uint8_t)(i24 >> 8);
+                            pDst[2] = (uint8_t)(i24 >> 16);
                             pDst += 3;
                         }
-                        rw.write((uint8_t*)bufI24, tbytes);
+                        rw.write((uint8_t*)bufI24, bytesCount);
                     }
                     break;
                 case SAMP_TYPE_INT32:
-                    volk_32f_s32f_convert_32i(bufI32, samples, 0x7fffffff, tcount);
-                    rw.write((uint8_t*)bufI32, tbytes);
+                    //volk_32f_s32f_convert_32i(bufI32, samples, 0x7fffffff, tcount);
+                    for (int i = 0; i < sampelCount; i++) {
+                        bufI32[i] = (int32_t)lroundf(std::clamp(samples[i], -1.0f, 1.0f) * (2147483648.0d - 0.5d) - 0.5d);
+                    }
+                    rw.write((uint8_t*)bufI32, bytesCount);
                     break;
                 case SAMP_TYPE_FLOAT32:
-                    rw.write((uint8_t*)samples, tbytes);
+                    rw.write((uint8_t*)samples, bytesCount);
                     break;
                 default:
                     break;

@@ -77,7 +77,7 @@ namespace wav {
         Format _format;
         SampleType _type;
         size_t bytesPerSamp;
-        double _halfRangeM1;
+        double _halfRangeMH;
 
         uint8_t* bufU8 = NULL;
         int16_t* bufI16 = NULL;
