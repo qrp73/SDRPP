@@ -34,6 +34,9 @@ enum WAVE_FORMAT {
 class WavReader {
 public:
     WavReader(std::string path) {
+        _valid = false;
+        _fileSize = 0;
+        _dataOffset = 0;
         _file = std::ifstream(path.c_str(), std::ios::binary);
         _file.seekg(0, std::ios_base::end);
         _fileSize = _file.tellg();
@@ -79,7 +82,7 @@ public:
     }
 
     uint32_t getSampleCount() {
-        return _hdr.data_size / _hdr.wBlockAlign;
+        return (uint32_t)((_fileSize-_dataOffset) / _hdr.wBlockAlign);
     }
 
     uint32_t getSampleRate() {
@@ -91,11 +94,15 @@ public:
     }
 
     void reset() {
-        _fmtPresent = false;
         _valid = false;
+        _fileSize = 0;
+        _dataOffset = 0;
         std::memset(&_hdr, 0, sizeof(_hdr));
+        _file.seekg(0, std::ios_base::end);
+        _fileSize = _file.tellg();
         _file.seekg(sizeof(uint32_t) * 3, std::ios_base::beg);
-        
+        bool isFmtPresent = false;
+        bool isDataPresent = false;
         while (_file.tellg() < _fileSize) {
             uint32_t chunkId;
             uint32_t chunkSize;
@@ -150,12 +157,9 @@ public:
                         _file.seekg(fmt_ExtraSize, std::ios_base::cur);
                     }
                 }
-                _fmtPresent = true;
+                isFmtPresent = true;
             } else if (memcmp(&chunkId, "data", 4) == 0) {
-                _hdr.data_id   = chunkId;
-                _hdr.data_size = chunkSize;
-                _data_offset = _file.tellg();
-                _bytesAvailable = chunkSize;
+                isDataPresent = true;
                 break;
             } else {
                 flog::warn("skip unknown chunk \"{0}\", size {1}", sbuf, chunkSize);
@@ -163,30 +167,33 @@ public:
                 _file.seekg(chunkSize, std::ios_base::cur);
             }
         }
-        _valid = _fmtPresent && _file.tellg() < _fileSize;
+        _dataOffset = isDataPresent ? _file.tellg() : _fileSize;
+        _valid = isFmtPresent && isDataPresent;
     }
 
     uint64_t getSamplePosition() {
         if (!_valid) return 0;
-        std::streampos offset = _file.tellg() - _data_offset;
+        std::streampos offset = _file.tellg() - _dataOffset;
         return offset / _hdr.wBlockAlign;
     }
     void seek(uint64_t sampleNumber) {
         if (!_valid) return;
         std::streampos offset = sampleNumber * _hdr.wBlockAlign;
-        _file.seekg(_data_offset + offset, std::ios_base::beg);
-        _bytesAvailable = _hdr.data_size - offset;
+        _file.seekg(_dataOffset + offset, std::ios_base::beg);
     }
 
     size_t readSamples(void* data, size_t size) {
-        if (!_valid || _bytesAvailable < 1) { 
+        size_t bytesAvailable = (_fileSize - _dataOffset) - _file.tellg();
+        if (bytesAvailable < 0) { 
+            bytesAvailable = 0;
+        }
+        if (!_valid || bytesAvailable < 1) { 
             //flog::warn("endOfFile reached");
             return 0;
         }
-        size_t count = std::min(std::max(size, (size_t)0), _bytesAvailable);
+        size_t count = std::clamp(size, (size_t)0, bytesAvailable);
         _file.read((char*)data, count);
         size_t read = _file.gcount();
-        _bytesAvailable -= read;
         return read;
     }
 
@@ -202,17 +209,11 @@ private:
         uint32_t dwAvgBytesPerSec;   // For buffer estimation
         uint16_t wBlockAlign;        // Data block size
         uint16_t wBitsPerSample;     // Sample size
-
-        // Data chunk
-        uint32_t data_id;            // "data"
-        uint32_t data_size;          // The data size should be file size - 36 bytes.
     };
 
-    bool           _valid = false;
+    bool           _valid;
     std::ifstream  _file;
     std::streampos _fileSize;
+    std::streampos _dataOffset;
     RIFF_HDR_t     _hdr;
-    bool           _fmtPresent = false;
-    size_t         _bytesAvailable = 0;
-    std::streampos _data_offset = 0;
 };
