@@ -241,7 +241,6 @@ public:
         if (config.conf.contains("sampleRateId")) {
             _srId = config.conf["sampleRateId"];
             _sampleRate = _sampleRates.key(_srId);
-            core::setInputSampleRate(_sampleRate);
         }
         if (config.conf.contains("waveTypeId")) {
             _waveTypeId = config.conf["waveTypeId"];
