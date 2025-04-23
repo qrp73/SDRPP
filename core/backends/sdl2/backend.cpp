@@ -246,7 +246,14 @@ namespace backend {
                         isWindowShouldClose = true;
                     }
                     if (event.key.keysym.sym == SDLK_F11 && !isKmsDrm) {
-                        SDL_SetWindowFullscreen(window, fullScreen ? 0 : SDL_WINDOW_FULLSCREEN);
+                        auto flags = SDL_GetWindowFlags(window);
+                        auto isFullScreen = (flags & SDL_WINDOW_FULLSCREEN_DESKTOP) || (flags & SDL_WINDOW_FULLSCREEN);
+                        flags = isFullScreen ? 0 : SDL_WINDOW_FULLSCREEN;
+                        flog::debug("SDL_SetWindowFullscreen({})", flags);
+                        auto errorCode = SDL_SetWindowFullscreen(window, flags);
+                        if (errorCode != 0) {
+                            flog::error("SDL_SetWindowFullscreen() failed: {}", SDL_GetError());
+                        }
                     }
                     break;
             }
