@@ -2823,7 +2823,8 @@ bool ImGui::SliderBehaviorT(const ImRect& bb, ImGuiID id, ImGuiDataType data_typ
     bool value_changed = false;
     if (bb.Contains(g.IO.MousePos)) {
         ImGui::SetKeyOwner(ImGuiKey_MouseWheelY, id);
-        if (g.IO.MouseWheel != 0) {
+        // Ignore wheel when item is disabled
+        if (g.IO.MouseWheel != 0 && !(g.CurrentItemFlags & ImGuiItemFlags_Disabled)) {
             auto wheel = g.IO.MouseWheel;
             if (axis == ImGuiAxis_X) wheel = -wheel; // just coincidence
             auto step = fabs((double)v_max - (double)v_min) / 100.0f;
