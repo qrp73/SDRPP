@@ -19,19 +19,19 @@ namespace demod {
 
             // Load config
             config->acquire();
+            if (config->conf[name][getName()].contains("agcMode")) {
+                _agcMode = config->conf[name][getName()]["agcMode"];
+            }
             if (config->conf[name][getName()].contains("agcAttack")) {
-                agcAttack = config->conf[name][getName()]["agcAttack"];
+                _agcAttack = config->conf[name][getName()]["agcAttack"];
             }
             if (config->conf[name][getName()].contains("agcDecay")) {
-                agcDecay = config->conf[name][getName()]["agcDecay"];
-            }
-            if (config->conf[name][getName()].contains("carrierAgc")) {
-                carrierAgc = config->conf[name][getName()]["carrierAgc"];
+                _agcDecay = config->conf[name][getName()]["agcDecay"];
             }
             config->release();
 
             // Define structure
-            demod.init(input, carrierAgc ? dsp::demod::AM<dsp::stereo_t>::AGCMode::CARRIER : dsp::demod::AM<dsp::stereo_t>::AGCMode::AUDIO, bandwidth, agcAttack / getIFSampleRate(), agcDecay / getIFSampleRate(), 100.0 / getIFSampleRate(), getIFSampleRate());
+            demod.init(input, _agcMode==0 ? dsp::demod::AM<dsp::stereo_t>::AGCMode::OFF : _agcMode==1 ? dsp::demod::AM<dsp::stereo_t>::AGCMode::CARRIER : dsp::demod::AM<dsp::stereo_t>::AGCMode::AUDIO, bandwidth, _agcAttack / getIFSampleRate(), _agcDecay / getIFSampleRate(), 100.0 / getIFSampleRate(), getIFSampleRate());
         }
 
         void start() { demod.start(); }
@@ -40,28 +40,39 @@ namespace demod {
 
         void showMenu() {
             float menuWidth = ImGui::GetContentRegionAvail().x;
+            
+            static const char* agcModesTxt[] = { "Off", "Carrier", "Audio" };
+            if (_agcMode < 0 || _agcMode >= IM_ARRAYSIZE(agcModesTxt)) _agcMode = 0;
+            ImGui::LeftLabel("AGC Mode");
+            ImGui::SetNextItemWidth(menuWidth - ImGui::GetCursorPosX());
+            if (ImGui::Combo(("##_radio_am_agc_mode_" + name).c_str(), &_agcMode, agcModesTxt, IM_ARRAYSIZE(agcModesTxt))) {
+                switch (_agcMode) {
+                    case 0: demod.setAGCMode(dsp::demod::AM<dsp::stereo_t>::AGCMode::OFF); break;
+                    case 1: demod.setAGCMode(dsp::demod::AM<dsp::stereo_t>::AGCMode::CARRIER); break; 
+                    case 2: demod.setAGCMode(dsp::demod::AM<dsp::stereo_t>::AGCMode::AUDIO); break;
+                }
+                _config->acquire();
+                _config->conf[name][getName()]["agcMode"] = _agcMode;
+                _config->release(true);
+            }
+            if (_agcMode == 0) ImGui::BeginDisabled();
             ImGui::LeftLabel("AGC Attack");
             ImGui::SetNextItemWidth(menuWidth - ImGui::GetCursorPosX());
-            if (ImGui::SliderFloat(("##_radio_am_agc_attack_" + name).c_str(), &agcAttack, 1.0f, 200.0f)) {
-                demod.setAGCAttack(agcAttack / getIFSampleRate());
+            if (ImGui::SliderFloat(("##_radio_am_agc_attack_" + name).c_str(), &_agcAttack, 1.0f, 200.0f)) {
+                demod.setAGCAttack(_agcAttack / getIFSampleRate());
                 _config->acquire();
-                _config->conf[name][getName()]["agcAttack"] = agcAttack;
+                _config->conf[name][getName()]["agcAttack"] = _agcAttack;
                 _config->release(true);
             }
             ImGui::LeftLabel("AGC Decay");
             ImGui::SetNextItemWidth(menuWidth - ImGui::GetCursorPosX());
-            if (ImGui::SliderFloat(("##_radio_am_agc_decay_" + name).c_str(), &agcDecay, 1.0f, 20.0f)) {
-                demod.setAGCDecay(agcDecay / getIFSampleRate());
+            if (ImGui::SliderFloat(("##_radio_am_agc_decay_" + name).c_str(), &_agcDecay, 1.0f, 20.0f)) {
+                demod.setAGCDecay(_agcDecay / getIFSampleRate());
                 _config->acquire();
-                _config->conf[name][getName()]["agcDecay"] = agcDecay;
+                _config->conf[name][getName()]["agcDecay"] = _agcDecay;
                 _config->release(true);
             }
-            if (ImGui::Checkbox(("Carrier AGC##_radio_am_carrier_agc_" + name).c_str(), &carrierAgc)) {
-                demod.setAGCMode(carrierAgc ? dsp::demod::AM<dsp::stereo_t>::AGCMode::CARRIER : dsp::demod::AM<dsp::stereo_t>::AGCMode::AUDIO);
-                _config->acquire();
-                _config->conf[name][getName()]["carrierAgc"] = carrierAgc;
-                _config->release(true);
-            }
+            if (_agcMode == 0) ImGui::EndDisabled();
         }
 
         void setBandwidth(double bandwidth) { demod.setBandwidth(bandwidth); }
@@ -93,9 +104,9 @@ namespace demod {
 
         ConfigManager* _config = NULL;
 
-        float agcAttack = 50.0f;
-        float agcDecay = 5.0f;
-        bool carrierAgc = false;
+        int   _agcMode  = 1;
+        float _agcAttack = 50.0f;
+        float _agcDecay = 5.0f;
 
         std::string name;
     };

@@ -12,13 +12,12 @@ namespace dsp::demod {
         using base_type = Processor<dsp::complex_t, T>;
     public:
         enum AGCMode {
+            OFF,
             CARRIER,
             AUDIO,
         };
 
         AM() {}
-
-        AM(stream<complex_t>* in, AGCMode agcMode, double bandwidth, double agcAttack, double agcDecay, double dcBlockRate, double samplerate) { init(in, agcMode, bandwidth, agcAttack, agcDecay, dcBlockRate, samplerate); }
 
         ~AM() {
             if (!base_type::_block_init) { return; }

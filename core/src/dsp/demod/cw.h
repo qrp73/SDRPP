@@ -12,8 +12,6 @@ namespace dsp::demod {
     public:
         CW() {}
         
-        CW(stream<complex_t>* in, double tone, double agcAttack, double agcDecay, double samplerate) { init(in, tone, agcAttack, agcDecay, samplerate); }
-
         void init(stream<complex_t>* in, double tone, bool agcEnabled, double agcAttack, double agcDecay, double samplerate) {
             _tone = tone;
             _samplerate = samplerate;

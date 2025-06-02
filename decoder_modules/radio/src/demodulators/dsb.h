@@ -21,16 +21,19 @@ namespace demod {
 
             // Load config
             config->acquire();
+            if (config->conf[name][getName()].contains("agcEnabled")) {
+                _agcEnabled = config->conf[name][getName()]["agcEnabled"];
+            }
             if (config->conf[name][getName()].contains("agcAttack")) {
-                agcAttack = config->conf[name][getName()]["agcAttack"];
+                _agcAttack = config->conf[name][getName()]["agcAttack"];
             }
             if (config->conf[name][getName()].contains("agcDecay")) {
-                agcDecay = config->conf[name][getName()]["agcDecay"];
+                _agcDecay = config->conf[name][getName()]["agcDecay"];
             }
             config->release();
 
             // Define structure
-            demod.init(input, dsp::demod::SSB<dsp::stereo_t>::Mode::DSB, bandwidth, getIFSampleRate(), agcAttack / getIFSampleRate(), agcDecay / getIFSampleRate());
+            demod.init(input, dsp::demod::SSB<dsp::stereo_t>::Mode::DSB, bandwidth, getIFSampleRate(), _agcEnabled, _agcAttack / getIFSampleRate(), _agcDecay / getIFSampleRate());
         }
 
         void start() { demod.start(); }
@@ -39,22 +42,32 @@ namespace demod {
 
         void showMenu() {
             float menuWidth = ImGui::GetContentRegionAvail().x;
+            if (ImGui::Checkbox(("##_radio_dsb_agc_enable_" + name).c_str(), &_agcEnabled)) {
+                demod.setAGCEnabled(_agcEnabled);
+                _config->acquire();
+                _config->conf[name][getName()]["agcEnabled"] = _agcEnabled;
+                _config->release(true);
+            }
+            ImGui::SameLine();
+            ImGui::TextUnformatted("AGC");
+            if (!_agcEnabled) ImGui::BeginDisabled();
             ImGui::LeftLabel("AGC Attack");
             ImGui::SetNextItemWidth(menuWidth - ImGui::GetCursorPosX());
-            if (ImGui::SliderFloat(("##_radio_dsb_agc_attack_" + name).c_str(), &agcAttack, 1.0f, 200.0f)) {
-                demod.setAGCAttack(agcAttack / getIFSampleRate());
+            if (ImGui::SliderFloat(("##_radio_dsb_agc_attack_" + name).c_str(), &_agcAttack, 1.0f, 200.0f)) {
+                demod.setAGCAttack(_agcAttack / getIFSampleRate());
                 _config->acquire();
-                _config->conf[name][getName()]["agcAttack"] = agcAttack;
+                _config->conf[name][getName()]["agcAttack"] = _agcAttack;
                 _config->release(true);
             }
             ImGui::LeftLabel("AGC Decay");
             ImGui::SetNextItemWidth(menuWidth - ImGui::GetCursorPosX());
-            if (ImGui::SliderFloat(("##_radio_dsb_agc_decay_" + name).c_str(), &agcDecay, 1.0f, 20.0f)) {
-                demod.setAGCDecay(agcDecay / getIFSampleRate());
+            if (ImGui::SliderFloat(("##_radio_dsb_agc_decay_" + name).c_str(), &_agcDecay, 1.0f, 20.0f)) {
+                demod.setAGCDecay(_agcDecay / getIFSampleRate());
                 _config->acquire();
-                _config->conf[name][getName()]["agcDecay"] = agcDecay;
+                _config->conf[name][getName()]["agcDecay"] = _agcDecay;
                 _config->release(true);
             }
+            if (!_agcEnabled) ImGui::EndDisabled();
         }
 
         void setBandwidth(double bandwidth) { demod.setBandwidth(bandwidth); }
@@ -86,8 +99,9 @@ namespace demod {
 
         ConfigManager* _config;
 
-        float agcAttack = 50.0f;
-        float agcDecay = 5.0f;
+        bool  _agcEnabled = true;
+        float _agcAttack = 50.0f;
+        float _agcDecay = 5.0f;
 
         std::string name;
     };
