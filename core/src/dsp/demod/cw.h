@@ -14,9 +14,10 @@ namespace dsp::demod {
         
         CW(stream<complex_t>* in, double tone, double agcAttack, double agcDecay, double samplerate) { init(in, tone, agcAttack, agcDecay, samplerate); }
 
-        void init(stream<complex_t>* in, double tone, double agcAttack, double agcDecay, double samplerate) {
+        void init(stream<complex_t>* in, double tone, bool agcEnabled, double agcAttack, double agcDecay, double samplerate) {
             _tone = tone;
             _samplerate = samplerate;
+            _agcEnabled = agcEnabled;
             
             xlator.init(NULL, tone, samplerate);
             agc.init(NULL, 1.0, agcAttack, agcDecay, 10e6, 10.0, INFINITY);
@@ -33,6 +34,10 @@ namespace dsp::demod {
             std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
             _tone = tone;
             xlator.setOffset(_tone, _samplerate);
+        }
+
+        void setAGCEnabled(bool enabled) {
+            _agcEnabled = enabled;
         }
 
         void setAGCAttack(double attack) {
@@ -58,11 +63,11 @@ namespace dsp::demod {
             xlator.process(count, in, xlator.out.writeBuf);
             if constexpr (std::is_same_v<T, float>) {
                 dsp::convert::ComplexToReal::process(count, xlator.out.writeBuf, out);
-                agc.process(count, out, out);
+                if (_agcEnabled) agc.process(count, out, out);
             }
             if constexpr (std::is_same_v<T, stereo_t>) {
                 dsp::convert::ComplexToReal::process(count, xlator.out.writeBuf, agc.out.writeBuf);
-                agc.process(count, agc.out.writeBuf, agc.out.writeBuf);
+                if (_agcEnabled) agc.process(count, agc.out.writeBuf, agc.out.writeBuf);
                 convert::MonoToStereo::process(count, agc.out.writeBuf, out);
             }
             return count;
@@ -82,6 +87,7 @@ namespace dsp::demod {
     private:
         double _tone;
         double _samplerate;
+        bool   _agcEnabled;
 
         dsp::channel::FrequencyXlator xlator;
         dsp::loop::AGC<float> agc;

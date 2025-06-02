@@ -16,63 +16,77 @@ namespace demod {
         }
 
         void init(std::string name, ConfigManager* config, dsp::stream<dsp::complex_t>* input, double bandwidth, double audioSR) {
-            this->name = name;
+            this->_name = name;
             this->_config = config;
-            this->afbwChangeHandler = afbwChangeHandler;
+            //this->_afbwChangeHandler = afbwChangeHandler;
 
             // Load config
             config->acquire();
+            if (config->conf[name][getName()].contains("agcEnabled")) {
+                _agcEnabled = config->conf[name][getName()]["agcEnabled"];
+            }
             if (config->conf[name][getName()].contains("agcAttack")) {
-                agcAttack = config->conf[name][getName()]["agcAttack"];
+                _agcAttack = config->conf[name][getName()]["agcAttack"];
             }
             if (config->conf[name][getName()].contains("agcDecay")) {
-                agcDecay = config->conf[name][getName()]["agcDecay"];
+                _agcDecay = config->conf[name][getName()]["agcDecay"];
             }
             if (config->conf[name][getName()].contains("tone")) {
-                tone = config->conf[name][getName()]["tone"];
+                _tone = config->conf[name][getName()]["tone"];
             }
             config->release();
 
             // Define structure
-            demod.init(input, tone, agcAttack / getIFSampleRate(), agcDecay / getIFSampleRate(), getIFSampleRate());
+            _demod.init(input, _tone, _agcEnabled, _agcAttack / getIFSampleRate(), _agcDecay / getIFSampleRate(), getIFSampleRate());
         }
 
-        void start() { demod.start(); }
+        void start() { _demod.start(); }
 
-        void stop() { demod.stop(); }
+        void stop() { _demod.stop(); }
 
         void showMenu() {
             float menuWidth = ImGui::GetContentRegionAvail().x;
+            ImGui::SetNextItemWidth(menuWidth - ImGui::GetCursorPosX());
+            if (ImGui::Checkbox(("##_radio_cw_agc_enable_" + _name).c_str(), &_agcEnabled)) {
+                _demod.setAGCEnabled(_agcEnabled);
+                _config->acquire();
+                _config->conf[_name][getName()]["agcEnabled"] = _agcEnabled;
+                _config->release(true);
+            }
+            ImGui::SameLine();
+            ImGui::TextUnformatted("AGC");
+            if (!_agcEnabled) ImGui::BeginDisabled();
             ImGui::LeftLabel("AGC Attack");
             ImGui::SetNextItemWidth(menuWidth - ImGui::GetCursorPosX());
-            if (ImGui::SliderFloat(("##_radio_cw_agc_attack_" + name).c_str(), &agcAttack, 1.0f, 200.0f)) {
-                demod.setAGCAttack(agcAttack / getIFSampleRate());
+            if (ImGui::SliderFloat(("##_radio_cw_agc_attack_" + _name).c_str(), &_agcAttack, 1.0f, 200.0f)) {
+                _demod.setAGCAttack(_agcAttack / getIFSampleRate());
                 _config->acquire();
-                _config->conf[name][getName()]["agcAttack"] = agcAttack;
+                _config->conf[_name][getName()]["agcAttack"] = _agcAttack;
                 _config->release(true);
             }
             ImGui::LeftLabel("AGC Decay");
             ImGui::SetNextItemWidth(menuWidth - ImGui::GetCursorPosX());
-            if (ImGui::SliderFloat(("##_radio_cw_agc_decay_" + name).c_str(), &agcDecay, 1.0f, 20.0f)) {
-                demod.setAGCDecay(agcDecay / getIFSampleRate());
+            if (ImGui::SliderFloat(("##_radio_cw_agc_decay_" + _name).c_str(), &_agcDecay, 1.0f, 20.0f)) {
+                _demod.setAGCDecay(_agcDecay / getIFSampleRate());
                 _config->acquire();
-                _config->conf[name][getName()]["agcDecay"] = agcDecay;
+                _config->conf[_name][getName()]["agcDecay"] = _agcDecay;
                 _config->release(true);
             }
+            if (!_agcEnabled) ImGui::EndDisabled();
             ImGui::LeftLabel("Tone Frequency");
             ImGui::FillWidth();
-            if (ImGui::InputInt(("Stereo##_radio_cw_tone_" + name).c_str(), &tone, 10, 100)) {
-                tone = std::clamp<int>(tone, 250, 1250);
-                demod.setTone(tone);
+            if (ImGui::InputInt(("Stereo##_radio_cw_tone_" + _name).c_str(), &_tone, 10, 100)) {
+                _tone = std::clamp<int>(_tone, 250, 1250);
+                _demod.setTone(_tone);
                 _config->acquire();
-                _config->conf[name][getName()]["tone"] = tone;
+                _config->conf[_name][getName()]["tone"] = _tone;
                 _config->release(true);
             }
         }
 
         void setBandwidth(double bandwidth) {}
 
-        void setInput(dsp::stream<dsp::complex_t>* input) { demod.setInput(input); }
+        void setInput(dsp::stream<dsp::complex_t>* input) { _demod.setInput(input); }
 
         void AFSampRateChanged(double newSR) {}
 
@@ -92,18 +106,19 @@ namespace demod {
         int getDefaultDeemphasisMode() { return DEEMP_MODE_NONE; }
         bool getFMIFNRAllowed() { return false; }
         bool getNBAllowed() { return false; }
-        dsp::stream<dsp::stereo_t>* getOutput() { return &demod.out; }
+        dsp::stream<dsp::stereo_t>* getOutput() { return &_demod.out; }
 
     private:
         ConfigManager* _config = NULL;
-        dsp::demod::CW<dsp::stereo_t> demod;
+        dsp::demod::CW<dsp::stereo_t> _demod;
 
-        std::string name;
+        std::string _name;
 
-        float agcAttack = 100.0f;
-        float agcDecay = 5.0f;
-        int tone = 700;
+        bool  _agcEnabled = true;
+        float _agcAttack = 100.0f;
+        float _agcDecay = 5.0f;
+        int   _tone = 700;
 
-        EventHandler<float> afbwChangeHandler;
+        EventHandler<float> _afbwChangeHandler;
     };
 }
