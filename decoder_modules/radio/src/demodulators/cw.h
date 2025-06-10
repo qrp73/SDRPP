@@ -25,6 +25,9 @@ namespace demod {
             if (config->conf[name][getName()].contains("agcEnabled")) {
                 _agcEnabled = config->conf[name][getName()]["agcEnabled"];
             }
+            if (config->conf[name][getName()].contains("agcGain")) {
+                _agcGain = config->conf[name][getName()]["agcGain"];
+            }
             if (config->conf[name][getName()].contains("agcAttack")) {
                 _agcAttack = config->conf[name][getName()]["agcAttack"];
             }
@@ -38,6 +41,7 @@ namespace demod {
 
             // Define structure
             _demod.init(input, _tone, _agcEnabled, _agcAttack / getIFSampleRate(), _agcDecay / getIFSampleRate(), getIFSampleRate());
+            _demod.setAGCGain(pow(10, _agcGain/20));
         }
 
         void start() { _demod.start(); }
@@ -52,9 +56,31 @@ namespace demod {
                 _config->acquire();
                 _config->conf[_name][getName()]["agcEnabled"] = _agcEnabled;
                 _config->release(true);
+                if (!_agcEnabled) {
+                    _agcGain = 20*log10(_demod.getAGCGain());                
+                    _config->acquire();
+                    _config->conf[_name][getName()]["agcGain"] = _agcGain;
+                    _config->release(true);
+                }
             }
             ImGui::SameLine();
             ImGui::TextUnformatted("AGC");
+            if (_agcEnabled) { 
+                ImGui::BeginDisabled();
+                _agcGain = 20*log10(_demod.getAGCGain());
+            }
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(menuWidth - ImGui::GetCursorPosX());
+            if (ImGui::SliderFloat(("##_radio_cw_gain_" + _name).c_str(), &_agcGain, -10.0f, 90.0f, "%.0f dB")) {
+                if (!_agcEnabled) {
+                    _demod.setAGCGain(pow(10, _agcGain/20));
+                    _config->acquire();
+                    _config->conf[_name][getName()]["agcGain"] = _agcGain;
+                    _config->release(true);
+                }
+            }
+            if (_agcEnabled) ImGui::EndDisabled();
+            
             if (!_agcEnabled) ImGui::BeginDisabled();
             ImGui::LeftLabel("AGC Attack");
             ImGui::SetNextItemWidth(menuWidth - ImGui::GetCursorPosX());
@@ -115,6 +141,7 @@ namespace demod {
         std::string _name;
 
         bool  _agcEnabled = true;
+        float _agcGain = 1.0;
         float _agcAttack = 100.0f;
         float _agcDecay = 5.0f;
         int   _tone = 700;

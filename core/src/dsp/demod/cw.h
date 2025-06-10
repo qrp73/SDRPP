@@ -15,13 +15,13 @@ namespace dsp::demod {
         void init(stream<complex_t>* in, double tone, bool agcEnabled, double agcAttack, double agcDecay, double samplerate) {
             _tone = tone;
             _samplerate = samplerate;
-            _agcEnabled = agcEnabled;
             
-            xlator.init(NULL, tone, samplerate);
-            agc.init(NULL, 1.0, agcAttack, agcDecay, 10e6, 10.0, INFINITY);
+            _xlator.init(NULL, tone, samplerate);
+            _agc.init(NULL, 1.0, agcAttack, agcDecay, 10e6, 1.0, 1.0);
+            _agc.setEnabled(agcEnabled);
 
             if constexpr (std::is_same_v<T, float>) {
-                agc.out.free();
+                _agc.out.free();
             }
 
             base_type::init(in);
@@ -31,42 +31,54 @@ namespace dsp::demod {
             assert(base_type::_block_init);
             std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
             _tone = tone;
-            xlator.setOffset(_tone, _samplerate);
+            _xlator.setOffset(_tone, _samplerate);
         }
 
         void setAGCEnabled(bool enabled) {
-            _agcEnabled = enabled;
+            assert(base_type::_block_init);
+            std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
+            _agc.setEnabled(enabled);
+        }
+        void setAGCGain(float gain) {
+            assert(base_type::_block_init);
+            std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
+            _agc.setGain(gain);
+        }
+        float getAGCGain() {
+            assert(base_type::_block_init);
+            std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
+            return _agc.getGain();
         }
 
         void setAGCAttack(double attack) {
             assert(base_type::_block_init);
             std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
-            agc.setAttack(attack);
+            _agc.setAttack(attack);
         }
 
         void setAGCDecay(double decay) {
             assert(base_type::_block_init);
             std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
-            agc.setDecay(decay);
+            _agc.setDecay(decay);
         }
 
         void setSamplerate(double samplerate) {
             assert(base_type::_block_init);
             std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
             _samplerate = samplerate;
-            xlator.setOffset(_tone, _samplerate);
+            _xlator.setOffset(_tone, _samplerate);
         }
 
         inline int process(int count, const complex_t* in, T* out) {
-            xlator.process(count, in, xlator.out.writeBuf);
+            _xlator.process(count, in, _xlator.out.writeBuf);
             if constexpr (std::is_same_v<T, float>) {
-                dsp::convert::ComplexToReal::process(count, xlator.out.writeBuf, out);
-                if (_agcEnabled) agc.process(count, out, out);
+                dsp::convert::ComplexToReal::process(count, _xlator.out.writeBuf, out);
+                _agc.process(count, out, out);
             }
             if constexpr (std::is_same_v<T, stereo_t>) {
-                dsp::convert::ComplexToReal::process(count, xlator.out.writeBuf, agc.out.writeBuf);
-                if (_agcEnabled) agc.process(count, agc.out.writeBuf, agc.out.writeBuf);
-                convert::MonoToStereo::process(count, agc.out.writeBuf, out);
+                dsp::convert::ComplexToReal::process(count, _xlator.out.writeBuf, _agc.out.writeBuf);
+                _agc.process(count, _agc.out.writeBuf, _agc.out.writeBuf);
+                convert::MonoToStereo::process(count, _agc.out.writeBuf, out);
             }
             return count;
         }
@@ -85,10 +97,9 @@ namespace dsp::demod {
     private:
         double _tone;
         double _samplerate;
-        bool   _agcEnabled;
 
-        dsp::channel::FrequencyXlator xlator;
-        dsp::loop::AGC<float> agc;
+        dsp::channel::FrequencyXlator _xlator;
+        dsp::loop::AGC<float>         _agc;
 
     };
 }

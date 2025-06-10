@@ -35,6 +35,9 @@ namespace dsp::demod {
             dcBlock.init(NULL, dcBlockRate);
             lpfTaps = taps::lowPass(bandwidth / 2.0, (bandwidth / 2.0) * 0.1, samplerate);
             lpf.init(NULL, lpfTaps);
+            
+            carrierAgc.setEnabled(true);
+            audioAgc.setEnabled(agcMode == AGCMode::AUDIO);
 
             if constexpr (std::is_same_v<T, float>) {
                 audioAgc.out.free();
@@ -43,15 +46,6 @@ namespace dsp::demod {
             lpf.out.free();
             
             base_type::init(in);
-        }
-
-        void setAGCMode(AGCMode agcMode) {
-            assert(base_type::_block_init);
-            std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
-            base_type::tempStop();
-            _agcMode = agcMode;
-            reset();
-            base_type::tempStart();
         }
 
         void setBandwidth(double bandwidth) {
@@ -63,6 +57,26 @@ namespace dsp::demod {
             taps::free(lpfTaps);
             lpfTaps = taps::lowPass(_bandwidth / 2.0, (_bandwidth / 2.0) * 0.1, _samplerate);
             lpf.setTaps(lpfTaps);
+        }
+
+        void setAGCMode(AGCMode agcMode) {
+            assert(base_type::_block_init);
+            std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
+            auto gain = _agcMode == AGCMode::CARRIER ? carrierAgc.getGain() : audioAgc.getGain();
+            _agcMode = agcMode;
+            carrierAgc.setEnabled(true);
+            audioAgc.setEnabled(agcMode == AGCMode::AUDIO);
+            audioAgc.setGain(gain);
+        }
+        void setAGCGain(float gain) {
+            assert(base_type::_block_init);
+            std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
+            audioAgc.setGain(gain);
+        }
+        float getAGCGain() {
+            assert(base_type::_block_init);
+            std::lock_guard<std::recursive_mutex> lck(base_type::ctrlMtx);
+            return _agcMode == AGCMode::CARRIER ? carrierAgc.getGain() : audioAgc.getGain();
         }
 
         void setAGCAttack(double attack) {
@@ -107,7 +121,7 @@ namespace dsp::demod {
             if constexpr (std::is_same_v<T, float>) {
                 volk_32fc_magnitude_32f(out, (lv_32fc_t*)in, count);
                 dcBlock.process(count, out, out);
-                if (_agcMode == AGCMode::AUDIO) {
+                if (_agcMode != AGCMode::CARRIER) {
                     audioAgc.process(count, out, out);
                 }
                 {
@@ -118,7 +132,7 @@ namespace dsp::demod {
             if constexpr (std::is_same_v<T, stereo_t>) {
                 volk_32fc_magnitude_32f(audioAgc.out.writeBuf, (lv_32fc_t*)in, count);
                 dcBlock.process(count, audioAgc.out.writeBuf, audioAgc.out.writeBuf);
-                if (_agcMode == AGCMode::AUDIO) {
+                if (_agcMode != AGCMode::CARRIER) {
                     audioAgc.process(count, audioAgc.out.writeBuf, audioAgc.out.writeBuf);
                 }
                 {
