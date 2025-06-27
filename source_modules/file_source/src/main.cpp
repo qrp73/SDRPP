@@ -130,6 +130,17 @@ private:
         } else if (!stream.swap(samples)) { 
             return false; 
         };
+        // wait if buffered size is > samples*2
+        double seconds = samples * _invSampleRate;
+        _playTimer += std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+            std::chrono::duration<double>(seconds));
+        auto now = std::chrono::steady_clock::now();
+        auto maxAhead = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+            std::chrono::duration<double>(seconds * 2.0));
+        auto delay = _playTimer - (now + maxAhead);
+        if (delay > std::chrono::steady_clock::duration::zero()) {
+            std::this_thread::sleep_for(delay);
+        }
         return true;
     }
 
@@ -169,6 +180,7 @@ private:
         flog::info("FileSource: start('{0}')", _this->name);
         if (_this->_running) { return; }
         if (_this->_reader == NULL) { return; }
+        _this->_playTimer = std::chrono::steady_clock::now();
         _this->_running = true;
         _this->_workerThread = std::thread(
             _this->_reader->getChannelCount() == 1 ?
@@ -584,6 +596,7 @@ private:
     float _invSampleRate = 1.0 / 1000000;
     int64_t _centerFreq = 0;
     std::string _fmtText;
+    std::chrono::steady_clock::time_point _playTimer;
 };
 
 MOD_EXPORT void _INIT_() {
