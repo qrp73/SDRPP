@@ -136,7 +136,7 @@ private:
             std::chrono::duration<double>(seconds));
         auto now = std::chrono::steady_clock::now();
         auto maxAhead = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
-            std::chrono::duration<double>(seconds * 2.0));
+            std::chrono::duration<double>(seconds * 8.0));
         auto delay = _playTimer - (now + maxAhead);
         if (delay > std::chrono::steady_clock::duration::zero()) {
             std::this_thread::sleep_for(delay);
@@ -276,7 +276,7 @@ private:
         
         ImGui::NewLine();
         SmGui::FillWidth();
-        if (SmGui::SliderFloat(CONCAT("Play##_file_source_pos_", _this->name), &_this->_posPlaySec, 0, _this->_posLastSec)) {
+        if (SmGui::SliderFloat(CONCAT("Play##_file_source_pos_", _this->name), &_this->_posPlaySec, 0, _this->_posLastSec, SmGui::FormatString::FMT_STR_FLOAT_ONE_DECIMAL)) {
             if (_this->_reader != NULL) {
                 _this->_reader->seek(_this->_posPlaySec * _this->_reader->getSampleRate());
             }
