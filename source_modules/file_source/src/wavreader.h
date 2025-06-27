@@ -81,8 +81,9 @@ public:
         return _hdr.wBlockAlign;
     }
 
-    uint32_t getSampleCount() {
-        return (uint32_t)((_fileSize-_dataOffset) / _hdr.wBlockAlign);
+    uint64_t getSampleCount() {
+        std::lock_guard<std::recursive_mutex> lck(_mtx);
+        return (uint64_t)((_fileSize-_dataOffset) / _hdr.wBlockAlign);
     }
 
     uint32_t getSampleRate() {
@@ -94,10 +95,12 @@ public:
     }
 
     void reset() {
+        std::lock_guard<std::recursive_mutex> lck(_mtx);
         _valid = false;
         _fileSize = 0;
         _dataOffset = 0;
         std::memset(&_hdr, 0, sizeof(_hdr));
+        _file.clear(); // reset failbit/eofbit
         _file.seekg(0, std::ios_base::end);
         _fileSize = _file.tellg();
         _file.seekg(sizeof(uint32_t) * 3, std::ios_base::beg);
@@ -173,16 +176,20 @@ public:
 
     uint64_t getSamplePosition() {
         if (!_valid) return 0;
+        std::lock_guard<std::recursive_mutex> lck(_mtx);
         std::streampos offset = _file.tellg() - _dataOffset;
         return offset / _hdr.wBlockAlign;
     }
     void seek(uint64_t sampleNumber) {
         if (!_valid) return;
+        std::lock_guard<std::recursive_mutex> lck(_mtx);
+        sampleNumber = std::min(sampleNumber, getSampleCount());
         std::streampos offset = sampleNumber * _hdr.wBlockAlign;
         _file.seekg(_dataOffset + offset, std::ios_base::beg);
     }
 
     size_t readSamples(void* data, size_t size) {
+        std::lock_guard<std::recursive_mutex> lck(_mtx);
         size_t bytesAvailable = (_fileSize - _dataOffset) - _file.tellg();
         if (bytesAvailable < 0) { 
             bytesAvailable = 0;
@@ -198,6 +205,7 @@ public:
     }
 
     void close() {
+        std::lock_guard<std::recursive_mutex> lck(_mtx);
         _file.close();
     }
 
@@ -211,6 +219,7 @@ private:
         uint16_t wBitsPerSample;     // Sample size
     };
 
+    std::recursive_mutex _mtx;
     bool           _valid;
     std::ifstream  _file;
     std::streampos _fileSize;

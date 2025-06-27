@@ -51,8 +51,8 @@ namespace wav {
 
         // Reset work values
         samplesWritten = 0;
-        bytesPerSamp = (SAMP_BITS[_type] / 8) * _channels;
         auto bitsPerSample = SAMP_BITS[_type];
+        bytesPerSamp = ((int)(bitsPerSample + 7) / 8) * _channels;
         _halfRangeMH = (double)(1L<<(bitsPerSample-1)) - 0.5d;
         
         if (_format == FORMAT_MP3) {

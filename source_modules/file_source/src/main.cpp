@@ -141,6 +141,11 @@ private:
         if (delay > std::chrono::steady_clock::duration::zero()) {
             std::this_thread::sleep_for(delay);
         }
+        if (_playTimer < now) {
+            // Playback is lagging behind real time - resynchronize timer
+            flog::warn("file_source: buffer underrun detected - clock resynchronize");
+            _playTimer = now;       
+        }
         return true;
     }
 
