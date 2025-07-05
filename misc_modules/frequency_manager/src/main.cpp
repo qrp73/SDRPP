@@ -17,14 +17,16 @@
 SDRPP_MOD_INFO{
     /* Name:            */ "frequency_manager",
     /* Description:     */ "Frequency manager module for SDR++",
-    /* Author:          */ "Ryzerth;Zimm",
-    /* Version:         */ 0, 3, 0,
+    /* Author:          */ "qrp73;Ryzerth;Zimm",
+    /* Version:         */ 0, 4, 0,
     /* Max instances    */ 1
 };
 
 struct FrequencyBookmark {
-    double frequency;
-    double bandwidth;
+    bool     loPresent;
+    int64_t lo;
+    int64_t frequency;
+    int32_t bandwidth;
     int mode;
     bool selected;
 };
@@ -119,6 +121,9 @@ private:
                     core::modComManager.callInterface(vfoName, RADIO_IFACE_CMD_SET_BANDWIDTH, &bandwidth, NULL);
                 }
             }
+            if (bm.loPresent) {
+                tuner::tune(tuner::TUNER_MODE_IQ_ONLY, vfoName, bm.lo);
+            }
             tuner::tune(tuner::TUNER_MODE_NORMAL, vfoName, bm.frequency);
         }
     }
@@ -147,17 +152,40 @@ private:
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
+            ImGui::LeftLabel("LO");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::SetNextItemWidth(200);
+            char buf[32] = {0};
+            if (editedBookmark.loPresent) {
+                snprintf(buf, sizeof(buf), "%" PRIu64, editedBookmark.lo);
+            } else {
+                buf[0] = '\0'; // show empty string
+            }
+            if (ImGui::InputText(("##freq_manager_edit_lo" + name).c_str(), buf, sizeof(buf), ImGuiInputTextFlags_CharsDecimal)) {
+                editedBookmark.loPresent = buf[0] != '\0';
+                if (editedBookmark.loPresent) {
+                    char* end;
+                    uint64_t val = strtoull(buf, &end, 10);
+                    editedBookmark.loPresent = end != buf && *end == '\0';
+                    if (editedBookmark.loPresent) {
+                        editedBookmark.lo = val;
+                    }
+                }                    
+            }            
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
             ImGui::LeftLabel("Frequency");
             ImGui::TableSetColumnIndex(1);
             ImGui::SetNextItemWidth(200);
-            ImGui::InputDouble(("##freq_manager_edit_freq" + name).c_str(), &editedBookmark.frequency);
+            ImGui::InputScalar(("##freq_manager_edit_freq" + name).c_str(), ImGuiDataType_S64, &editedBookmark.frequency);
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::LeftLabel("Bandwidth");
             ImGui::TableSetColumnIndex(1);
             ImGui::SetNextItemWidth(200);
-            ImGui::InputDouble(("##freq_manager_edit_bw" + name).c_str(), &editedBookmark.bandwidth);
+            ImGui::InputScalar(("##freq_manager_edit_bw" + name).c_str(), ImGuiDataType_S32, &editedBookmark.bandwidth);
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
@@ -293,9 +321,14 @@ private:
             wbm.listName = listName;
             for (auto [bookmarkName, bm] : config.conf["lists"][listName]["bookmarks"].items()) {
                 wbm.bookmarkName = bookmarkName;
-                wbm.bookmark.frequency = config.conf["lists"][listName]["bookmarks"][bookmarkName]["frequency"];
-                wbm.bookmark.bandwidth = config.conf["lists"][listName]["bookmarks"][bookmarkName]["bandwidth"];
-                wbm.bookmark.mode = config.conf["lists"][listName]["bookmarks"][bookmarkName]["mode"];
+                auto& jbm = config.conf["lists"][listName]["bookmarks"][bookmarkName];
+                wbm.bookmark.loPresent = jbm.contains("lo") && jbm["lo"].is_number_integer();
+                if (wbm.bookmark.loPresent) {
+                    wbm.bookmark.lo = jbm["lo"].get<int64_t>();
+                }
+                wbm.bookmark.frequency = jbm["frequency"].get<int64_t>();;
+                wbm.bookmark.bandwidth = jbm["bandwidth"].get<int32_t>();;
+                wbm.bookmark.mode      = jbm["mode"];
                 wbm.bookmark.selected = false;
                 waterfallBookmarks.push_back(wbm);
             }
@@ -325,9 +358,13 @@ private:
         config.acquire();
         for (auto [bmName, bm] : config.conf["lists"][listName]["bookmarks"].items()) {
             FrequencyBookmark fbm;
-            fbm.frequency = bm["frequency"];
-            fbm.bandwidth = bm["bandwidth"];
-            fbm.mode = bm["mode"];
+            fbm.loPresent = bm.contains("lo") && bm["lo"].is_number_integer();
+            if (fbm.loPresent) {
+                fbm.lo = bm["lo"].get<int64_t>();
+            }
+            fbm.frequency = bm["frequency"].get<int64_t>();
+            fbm.bandwidth = bm["bandwidth"].get<int32_t>();
+            fbm.mode      = bm["mode"];
             fbm.selected = false;
             bookmarks[bmName] = fbm;
         }
@@ -338,9 +375,15 @@ private:
         config.acquire();
         config.conf["lists"][listName]["bookmarks"] = json::object();
         for (auto [bmName, bm] : bookmarks) {
-            config.conf["lists"][listName]["bookmarks"][bmName]["frequency"] = bm.frequency;
-            config.conf["lists"][listName]["bookmarks"][bmName]["bandwidth"] = bm.bandwidth;
-            config.conf["lists"][listName]["bookmarks"][bmName]["mode"] = bm.mode;
+            auto& jbm = config.conf["lists"][listName]["bookmarks"][bmName];
+            if (bm.loPresent) {
+                jbm["lo"] = bm.lo;
+            } else if (jbm.contains("lo")) {
+                jbm.erase("lo");
+            }
+            jbm["frequency"] = bm.frequency;
+            jbm["bandwidth"] = bm.bandwidth;
+            jbm["mode"]      = bm.mode;
         }
         refreshWaterfallBookmarks(false);
         config.release(true);
@@ -424,11 +467,14 @@ private:
         if (ImGui::Button(("Add##_freq_mgr_add_" + _this->name).c_str(), ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
             // If there's no VFO selected, just save the center freq
             if (gui::waterfall.selectedVFO == "") {
+                _this->editedBookmark.loPresent = false;
                 _this->editedBookmark.frequency = gui::waterfall.getCenterFrequency();
                 _this->editedBookmark.bandwidth = 0;
                 _this->editedBookmark.mode = 7;
             }
             else {
+                _this->editedBookmark.loPresent = true;
+                _this->editedBookmark.lo = gui::waterfall.getCenterFrequency();
                 _this->editedBookmark.frequency = gui::waterfall.getCenterFrequency() + sigpath::vfoManager.getOffset(gui::waterfall.selectedVFO);
                 _this->editedBookmark.bandwidth = sigpath::vfoManager.getBandwidth(gui::waterfall.selectedVFO);
                 _this->editedBookmark.mode = 7;
@@ -780,9 +826,13 @@ private:
                 continue;
             }
             FrequencyBookmark fbm;
-            fbm.frequency = bm["frequency"];
-            fbm.bandwidth = bm["bandwidth"];
-            fbm.mode = bm["mode"];
+            fbm.loPresent = bm.contains("lo") && bm["lo"].is_number_integer();
+            if (fbm.loPresent) {
+                fbm.lo = bm["lo"].get<int64_t>();
+            }
+            fbm.frequency = bm["frequency"].get<int64_t>();;
+            fbm.bandwidth = bm["bandwidth"].get<int32_t>();;
+            fbm.mode      = bm["mode"];
             fbm.selected = false;
             bookmarks[_name] = fbm;
         }
