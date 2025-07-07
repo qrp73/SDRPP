@@ -79,7 +79,8 @@ namespace ImGui {
         ImGui::SetCursorPosY(vpos + GImGui->Style.FramePadding.y);
         ImGui::TextUnformatted(text);
         ImGui::SameLine();
-        ImGui::SetCursorPosY(vpos);
+        //ImGui::SetCursorPosY(vpos);
+        //ImGui::Dummy(ImVec2(1,1));
     }
 
     void FillWidth() {
