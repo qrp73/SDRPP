@@ -15,6 +15,9 @@ Have good day and 73
 
 - added SDL2 OpenGL ES backend (enabled by default) which supports Linux KMS DRM and Wayland rendering, it can run without desktop. Tested on Raspberry Pi Zero 2W.
 - fixed waterfall zoom
+- fixed unexpected mouse clicks through imgui window/control etc (fix leakage for input events)
+- fix mouse wheel event processing
+- added manual/auto AGC switch to allow manual gain control for CW/LSB/USB/DSB/AM
 - SNR meter replaced with level meter + peak meter + level and SNR text indication in dB
   ![20250322_02h06m51s_grim](https://github.com/user-attachments/assets/731e2c77-f449-4da8-a777-daff1c8b364e)
 - unity gain for FFT and window functions
@@ -26,12 +29,18 @@ Have good day and 73
 - rtl_sdr_source: fixed sample conversion
 - hpsdr_source: added new module for HPSDR protocol enabled devices
 - file_source: code replaced with a new multi-format support (supported: FLOAT 32/64 bit and PCM 8/16/24/32 bit)
+- file_source: added support for WAVE_FORMAT_EXTENSIBLE
+- file_source: added support for broken WAV files with incorrect sample count in the header (unexpected power-off during recording, etc)
+- file_source: fix playing speed for not synchronized sink (network)
+- file_source: fix issue with realtime playback position change (previously leads to broken state)
 - audio_source: added support for mono source, fixed error logging
 - recorder: fixed default filename pattern
 - recorder: added 24-bit PCM support
 - recorder: added FLAC container support (8/16/24/32 bit mono/stereo, see libflac for supported sample rates)
 - recorder: added MP3 container support (VBR)
 - frequency_manager: fixed jittery label position
+- frequency_manager: added LO save support (if you don't want to save LO, just leave empty value, in this case it will works as before, old frequency file format is supported)
+- theme: added configurable antialiasing settings
 - some minor fixes
 
 ## SDL2 Wayland mode
