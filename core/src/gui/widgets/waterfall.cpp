@@ -824,7 +824,9 @@ namespace ImGui {
         window->DrawList->AddRect(widgetPos, widgetEndPos, IM_COL32(50, 50, 50, 255), 0.0, 0, style::uiScale);
         window->DrawList->AddLine(ImVec2(widgetPos.x, freqAreaMax.y), ImVec2(widgetPos.x + widgetSize.x, freqAreaMax.y), IM_COL32(50, 50, 50, 255), style::uiScale);
 
-        if (!gui::mainWindow.lockWaterfallControls) {
+        if (ImGui::IsWindowHovered(ImGuiHoveredFlags_None) &&
+            !gui::mainWindow.lockWaterfallControls) 
+        {
             inputHandled = false;
             InputHandlerArgs args;
             args.fftRectMin = fftAreaMin;
@@ -1360,7 +1362,9 @@ namespace ImGui {
             window->DrawList->AddRectFilled(notchMin, notchMax, IM_COL32(255, 0, 0, 127));
         }
 
-        if (!gui::mainWindow.lockWaterfallControls && !gui::waterfall.inputHandled) {
+        if (ImGui::IsWindowHovered(ImGuiHoveredFlags_None) && 
+            !gui::mainWindow.lockWaterfallControls && !gui::waterfall.inputHandled) 
+        {
             ImVec2 mousePos = ImGui::GetMousePos();
             if (rectMax.x - rectMin.x < 10) { return; }
             if (reference != REF_LOWER && !bandwidthLocked && !leftClamped) {
