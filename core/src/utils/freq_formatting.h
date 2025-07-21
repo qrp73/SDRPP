@@ -14,7 +14,7 @@ namespace utils {
                     break;
                 }
             }
-            return std::string(str).substr(0, len + 1) + "MHz";
+            return std::string(str).substr(0, len + 1) + " MHz";
         }
         else if (freq >= 1000.0) {
             sprintf(str, "%.06lf", freq / 1000.0);
@@ -26,7 +26,7 @@ namespace utils {
                     break;
                 }
             }
-            return std::string(str).substr(0, len + 1) + "kHz";
+            return std::string(str).substr(0, len + 1) + " kHz";
         }
         else {
             sprintf(str, "%.06lf", freq);
@@ -38,7 +38,7 @@ namespace utils {
                     break;
                 }
             }
-            return std::string(str).substr(0, len + 1) + "Hz";
+            return std::string(str).substr(0, len + 1) + " Hz";
         }
     }
 }

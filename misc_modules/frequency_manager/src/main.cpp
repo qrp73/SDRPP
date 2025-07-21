@@ -207,6 +207,7 @@ private:
                     bookmarks.erase(firstEditedBookmarkName);
                 }
                 bookmarks[editedBookmarkName] = editedBookmark;
+                _sortedBookmarks_dirty = true;
 
                 saveByName(selectedListName);
             }
@@ -347,6 +348,7 @@ private:
 
     void loadByName(std::string listName) {
         bookmarks.clear();
+        _sortedBookmarks_dirty = true;
         if (std::find(listNames.begin(), listNames.end(), listName) == listNames.end()) {
             selectedListName = "";
             selectedListId = 0;
@@ -367,6 +369,7 @@ private:
             fbm.mode      = bm["mode"];
             fbm.selected = false;
             bookmarks[bmName] = fbm;
+            _sortedBookmarks_dirty = true;
         }
         config.release();
     }
@@ -395,7 +398,7 @@ private:
 
         // TODO: Replace with something that won't iterate every frame
         std::vector<std::string> selectedNames;
-        for (auto& [name, bm] : _this->bookmarks) {
+        for (auto& [name, bm] : _this->_sortedBookmarks) {
             if (bm.selected) { selectedNames.push_back(name); }
         }
 
@@ -527,16 +530,52 @@ private:
                 ImGui::TextUnformatted("Deleting selected bookmaks. Are you sure?");
             }) == GENERIC_DIALOG_BUTTON_YES) {
             for (auto& _name : selectedNames) { _this->bookmarks.erase(_name); }
+            _this->_sortedBookmarks_dirty = true;
             _this->saveByName(_this->selectedListName);
         }
 
         // Bookmark list
-        if (ImGui::BeginTable(("freq_manager_bkm_table" + _this->name).c_str(), 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY, ImVec2(0, 200))) {
-            ImGui::TableSetupColumn("Name");
-            ImGui::TableSetupColumn("Bookmark");
+        if (ImGui::BeginTable(("freq_manager_bkm_table" + _this->name).c_str(), 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_Sortable, ImVec2(0, 200))) {
+            ImGui::TableSetupColumn("Name",     ImGuiTableColumnFlags_None,        0.0f, 0);
+            ImGui::TableSetupColumn("Mod",      ImGuiTableColumnFlags_WidthFixed, 40.0f, 1);
+            ImGui::TableSetupColumn("Bookmark", ImGuiTableColumnFlags_DefaultSort, 0.0f, 2);
             ImGui::TableSetupScrollFreeze(2, 1);
             ImGui::TableHeadersRow();
-            for (auto& [name, bm] : _this->bookmarks) {
+            
+            if (ImGuiTableSortSpecs* sortSpecs = ImGui::TableGetSortSpecs()) {
+                if (sortSpecs->SpecsDirty) {
+                    _this->_sortedBookmarks_column = sortSpecs->Specs[0].ColumnUserID;
+                    _this->_sortedBookmarks_ascending = (sortSpecs->Specs[0].SortDirection == ImGuiSortDirection_Ascending);
+                    _this->_sortedBookmarks_dirty = true;
+                    sortSpecs->SpecsDirty = false;
+                }
+            }
+            if (_this->_sortedBookmarks_dirty) {
+                _this->_sortedBookmarks.assign(_this->bookmarks.begin(), _this->bookmarks.end());
+                if (_this->_sortedBookmarks_column == 0) {
+                    std::sort(_this->_sortedBookmarks.begin(), _this->_sortedBookmarks.end(),
+                        [&](auto& a, auto& b) { 
+                            if (a.first == b.first) return a.second.frequency < b.second.frequency;
+                            return _this->_sortedBookmarks_ascending ? (a.first < b.first) : (a.first > b.first); 
+                        });
+                } else if (_this->_sortedBookmarks_column == 1) {
+                    std::sort(_this->_sortedBookmarks.begin(), _this->_sortedBookmarks.end(),
+                        [&](auto& a, auto& b) { 
+                            if (a.second.mode == b.second.mode) return a.second.frequency < b.second.frequency;
+                            return _this->_sortedBookmarks_ascending ? (a.second.mode < b.second.mode) : (a.second.mode > b.second.mode); 
+                        });
+                } else {
+                    std::sort(_this->_sortedBookmarks.begin(), _this->_sortedBookmarks.end(),
+                        [&](auto& a, auto& b) { 
+                            if (a.second.frequency == b.second.frequency) return a.first < b.first;
+                            return _this->_sortedBookmarks_ascending ? (a.second.frequency < b.second.frequency) : (a.second.frequency > b.second.frequency); 
+                        });
+                }
+                _this->_sortedBookmarks_dirty = false;
+            }            
+            
+            //for (auto& [name, bm] : _this->bookmarks) {
+            for (auto& [name, bm] : _this->_sortedBookmarks) {
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
                 ImVec2 min = ImGui::GetCursorPos();
@@ -544,7 +583,7 @@ private:
                 if (ImGui::Selectable((name + "##_freq_mgr_bkm_name_" + _this->name).c_str(), &bm.selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_SelectOnClick)) {
                     // if shift or control isn't pressed, deselect all others
                     if (!ImGui::GetIO().KeyShift && !ImGui::GetIO().KeyCtrl) {
-                        for (auto& [_name, _bm] : _this->bookmarks) {
+                        for (auto& [_name, _bm] : _this->_sortedBookmarks) {
                             if (name == _name) { continue; }
                             _bm.selected = false;
                         }
@@ -555,7 +594,10 @@ private:
                 }
 
                 ImGui::TableSetColumnIndex(1);
-                ImGui::Text("%s %s", utils::formatFreq(bm.frequency).c_str(), demodModeList[bm.mode]);
+                ImGui::Text("%s", demodModeList[bm.mode]);
+                
+                ImGui::TableSetColumnIndex(2);
+                ImGui::Text("%s", utils::formatFreq(bm.frequency).c_str());
                 ImVec2 max = ImGui::GetCursorPos();
             }
             ImGui::EndTable();
@@ -567,6 +609,7 @@ private:
             FrequencyBookmark& bm = _this->bookmarks[selectedNames[0]];
             applyBookmark(bm, gui::waterfall.selectedVFO);
             bm.selected = false;
+            _this->_sortedBookmarks_dirty = true;
         }
         if (selectedNames.size() != 1 && _this->selectedListName != "") { style::endDisabled(); }
 
@@ -836,6 +879,7 @@ private:
             fbm.selected = false;
             bookmarks[_name] = fbm;
         }
+        _sortedBookmarks_dirty = true;            
         saveByName(selectedListName);
 
         fs.close();
@@ -862,6 +906,11 @@ private:
     EventHandler<ImGui::WaterFall::InputHandlerArgs> inputHandler;
 
     std::map<std::string, FrequencyBookmark> bookmarks;
+    std::vector<std::pair<std::string, FrequencyBookmark>> _sortedBookmarks;
+    bool                                                   _sortedBookmarks_dirty = true;
+    int                                                    _sortedBookmarks_column = 2;
+    bool                                                   _sortedBookmarks_ascending = true;
+    
 
     std::string editedBookmarkName = "";
     std::string firstEditedBookmarkName = "";
