@@ -38,7 +38,9 @@ inline double findBestRange(double bandwidth, int maxSteps) {
 
 inline int printAndScale(char *buf, size_t maxlen, double freq) {
     uint64_t freqAbs = fabs(freq);
-    if (freqAbs < 1000) {
+    if (freqAbs < 1) {
+        return snprintf(buf, maxlen, "0");
+    } else if (freqAbs < 1000) {
         return snprintf(buf, maxlen, "%.9g", freq);
     } else if (freqAbs < 1000000) {
         return snprintf(buf, maxlen, "%.9lgk", freq / 1000.0);
