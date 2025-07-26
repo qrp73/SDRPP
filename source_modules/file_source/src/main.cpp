@@ -306,6 +306,8 @@ private:
         auto fmtBits = reader->getBitDepth();
 
         // Left=I, Right=Q
+        // Note: Q=I preserves power but causes a 45 degree phase shift
+        //       With Q=0, power splits evenly between positive and negative frequencies.
         if (fmtCode == WAVE_FORMAT::IEEE_FLOAT && fmtBits == 32) {
             float inBuf[blockSize];
             // WAV uses f32 format for 32 bit IEEE_FLOAT
