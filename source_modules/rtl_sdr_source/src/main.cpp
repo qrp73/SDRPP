@@ -1,4 +1,5 @@
 #include <utils/flog.h>
+#include <utils/freq_formatting.h>
 #include <module.h>
 #include <gui/gui.h>
 #include <signal_path/signal_path.h>
@@ -17,39 +18,34 @@
 SDRPP_MOD_INFO{
     /* Name:            */ "rtl_sdr_source",
     /* Description:     */ "RTL-SDR source module for SDR++",
-    /* Author:          */ "Ryzerth",
-    /* Version:         */ 0, 1, 0,
+    /* Author:          */ "Ryzerth, qrp73",
+    /* Version:         */ 0, 2, 0,
     /* Max instances    */ 1
 };
 
 ConfigManager config;
 
-const double sampleRates[] = {
-    250000,
+const uint32_t sampleRates[] = {
+    240000,     // 48k
+    //250000,             not exact
+    288000,     // 96k
+    960000,     // 192k
     1024000,
-    1536000,
-    1792000,
-    1920000,
+    1152000,    // 384k
+    1200000,    // 48k
+    1536000,    // 384k
+    //1792000,            not exact
+    1920000,    // 384k
     2048000,
-    2160000,
-    2400000,
+    //2160000,            not exact
+    2304000,    // 384k
+    2400000,    // 96k
     2560000,
-    2880000,
-    3200000
-};
-
-const char* sampleRatesTxt[] = {
-    "250kHz",
-    "1.024MHz",
-    "1.536MHz",
-    "1.792MHz",
-    "1.92MHz",
-    "2.048MHz",
-    "2.16MHz",
-    "2.4MHz",
-    "2.56MHz",
-    "2.88MHz",
-    "3.2MHz"
+    //2688000,    // 384k not exact
+    2880000,    // 192k
+    //3072000,    // 384k issue
+    //3168000,    // 96k  issue
+    3200000,
 };
 
 const char* directSamplingModesTxt = "Disabled\0I branch\0Q branch\0";
@@ -72,10 +68,9 @@ public:
         handler.tuneHandler = tune;
         handler.stream = &stream;
 
-        strcpy(dbTxt, "--");
-
-        for (int i = 0; i < 11; i++) {
-            sampleRateListTxt += sampleRatesTxt[i];
+        const size_t sampleRateCount = sizeof(sampleRates) / sizeof(sampleRates[0]);
+        for (int i = 0; i < sampleRateCount; i++) {
+            sampleRateListTxt += utils::formatFreq(sampleRates[i]);
             sampleRateListTxt += '\0';
         }
 
@@ -200,12 +195,12 @@ public:
             config.conf["devices"][selectedDevName]["gain"] = gainId;
         }
         if (gainId >= gainList.size()) { gainId = gainList.size() - 1; }
-        updateGainTxt();
 
         // Load config
         if (config.conf["devices"][selectedDevName].contains("sampleRate")) {
-            int selectedSr = config.conf["devices"][selectedDevName]["sampleRate"];
-            for (int i = 0; i < 11; i++) {
+            uint32_t selectedSr = config.conf["devices"][selectedDevName]["sampleRate"];
+            const size_t sampleRateCount = sizeof(sampleRates) / sizeof(sampleRates[0]);
+            for (int i = 0; i < sampleRateCount; i++) {
                 if (sampleRates[i] == selectedSr) {
                     srId = i;
                     sampleRate = selectedSr;
@@ -240,7 +235,6 @@ public:
 
         if (config.conf["devices"][selectedDevName].contains("gain")) {
             gainId = config.conf["devices"][selectedDevName]["gain"];
-            updateGainTxt();
         }
 
         config.release(created);
@@ -249,19 +243,6 @@ public:
     }
 
 private:
-    std::string getBandwdithScaled(double bw) {
-        char buf[1024];
-        if (bw >= 1000000.0) {
-            sprintf(buf, "%.1lfMHz", bw / 1000000.0);
-        }
-        else if (bw >= 1000.0) {
-            sprintf(buf, "%.1lfkHz", bw / 1000.0);
-        }
-        else {
-            sprintf(buf, "%.1lfHz", bw);
-        }
-        return std::string(buf);
-    }
 
     static void menuSelected(void* ctx) {
         RTLSDRSourceModule* _this = (RTLSDRSourceModule*)ctx;
@@ -293,7 +274,7 @@ private:
             return;
         }
 
-        flog::info("RTL-SDR Sample Rate: {0}", _this->sampleRate);
+        flog::info("RTL-SDR Sample Rate: {0}", utils::formatFreq(_this->sampleRate));
 
         rtlsdr_set_sample_rate(_this->openDev, _this->sampleRate);
         rtlsdr_set_center_freq(_this->openDev, _this->freq);
@@ -348,7 +329,7 @@ private:
             }
         }
         _this->freq = freq;
-        flog::info("RTLSDRSourceModule '{0}': Tune: {1}!", _this->name, freq);
+        flog::info("RTLSDRSourceModule '{0}': Tune: {1}!", _this->name, utils::formatFreq(_this->freq));
     }
 
     static void menuHandler(void* ctx) {
@@ -436,7 +417,6 @@ private:
         // TODO: FIND ANOTHER WAY
         if (_this->serverMode) {
             if (SmGui::SliderInt(CONCAT("##_rtlsdr_gain_", _this->name), &_this->gainId, 0, _this->gainList.size() - 1, SmGui::FMT_STR_NONE)) {
-                _this->updateGainTxt();
                 if (_this->running) {
                     rtlsdr_set_tuner_gain(_this->openDev, _this->gainList[_this->gainId]);
                 }
@@ -448,8 +428,9 @@ private:
             }
         }
         else {
-            if (ImGui::SliderInt(CONCAT("##_rtlsdr_gain_", _this->name), &_this->gainId, 0, _this->gainList.size() - 1, _this->dbTxt)) {
-                _this->updateGainTxt();
+            char dbTxt[128] = {0};
+            sprintf(dbTxt, "%.1f dB", (float)_this->gainList[_this->gainId] / 10.0f);
+            if (ImGui::SliderInt(CONCAT("##_rtlsdr_gain_", _this->name), &_this->gainId, 0, _this->gainList.size() - 1, dbTxt)) {
                 if (_this->running) {
                     rtlsdr_set_tuner_gain(_this->openDev, _this->gainList[_this->gainId]);
                 }
@@ -532,18 +513,14 @@ private:
         _this->stream.swap(sampleCount);
     }
 
-    void updateGainTxt() {
-        sprintf(dbTxt, "%.1f dB", (float)gainList[gainId] / 10.0f);
-    }
-
     std::string name;
     rtlsdr_dev_t* openDev;
     bool enabled = true;
     dsp::stream<dsp::complex_t> stream;
-    double sampleRate;
+    uint32_t sampleRate;
     SourceManager::SourceHandler handler;
     bool running = false;
-    double freq;
+    int64_t freq;
     std::string selectedDevName = "";
     int devId = 0;
     int srId = 0;
@@ -570,8 +547,6 @@ private:
 
     // Handler stuff
     int asyncCount = 0;
-
-    char dbTxt[128];
 
     std::vector<std::string> devNames;
     std::string devListTxt;
