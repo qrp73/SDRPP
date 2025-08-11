@@ -78,8 +78,6 @@ void MainWindow::init() {
     gui::menu.registerEntry("VFO Color", vfo_color_menu::draw, NULL);
     gui::menu.registerEntry("Module Manager", module_manager_menu::draw, NULL);
 
-    gui::freqSelect.init();
-
     // Set default values for waterfall in case no source init's it
     gui::waterfall.setBandwidth(8000000);
     gui::waterfall.setViewBandwidth(8000000);
@@ -292,7 +290,7 @@ void MainWindow::draw() {
     // Handle change in selected frequency
     if (gui::freqSelect.frequencyChanged) {
         gui::freqSelect.frequencyChanged = false;
-        tuner::tune(tuningMode, gui::waterfall.selectedVFO, gui::freqSelect.frequency);
+        tuner::tune(tuningMode, gui::waterfall.selectedVFO, gui::freqSelect.getFrequency());
         if (vfo != NULL) {
             vfo->centerOffsetChanged = false;
             vfo->lowerOffsetChanged = false;
@@ -389,6 +387,10 @@ void MainWindow::draw() {
             gui::waterfall.VFOMoveSingleClick = false;
             core::configManager.acquire();
             core::configManager.conf["centerTuning"] = false;
+            core::configManager.conf["frequency"] = gui::waterfall.getCenterFrequency();
+            if (vfo != NULL) {
+                core::configManager.conf["vfoOffsets"][gui::waterfall.selectedVFO] = vfo->generalOffset;
+            }
             core::configManager.release(true);
         }
         ImGui::PopStyleVar();
@@ -398,9 +400,13 @@ void MainWindow::draw() {
         if (ImGui::ImageButton("sdrpp_dis_st_btn", icons::NORMAL_TUNING, btnSize, ImVec2(0, 0), ImVec2(1, 1), ImVec4(0, 0, 0, 0), textCol)) {
             tuningMode = tuner::TUNER_MODE_CENTER;
             gui::waterfall.VFOMoveSingleClick = true;
-            tuner::tune(tuner::TUNER_MODE_CENTER, gui::waterfall.selectedVFO, gui::freqSelect.frequency);
+            tuner::tune(tuner::TUNER_MODE_CENTER, gui::waterfall.selectedVFO, gui::freqSelect.getFrequency());
             core::configManager.acquire();
             core::configManager.conf["centerTuning"] = true;
+            core::configManager.conf["frequency"] = gui::waterfall.getCenterFrequency();
+            if (vfo != NULL) {
+                core::configManager.conf["vfoOffsets"][gui::waterfall.selectedVFO] = vfo->generalOffset;
+            }
             core::configManager.release(true);
         }
         ImGui::PopStyleVar();

@@ -1,229 +1,298 @@
-#include <gui/widgets/frequency_select.h>
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include <config.h>
 #include <gui/style.h>
 #include <gui/gui.h>
+#include <gui/widgets/frequency_select.h>
 #include <backend.h>
-
-#ifndef IMGUI_DEFINE_MATH_OPERATORS
-#define IMGUI_DEFINE_MATH_OPERATORS
-#endif
 #include <imgui/imgui_internal.h>
 
-bool isInArea(ImVec2 val, ImVec2 min, ImVec2 max) {
-    return val.x >= min.x && val.x < max.x && val.y >= min.y && val.y < max.y;
-}
+
+constexpr const char* groupSymbol = "˙";
+constexpr const char* minusSymbol = "-";
+
 
 FrequencySelect::FrequencySelect() {
-}
-
-void FrequencySelect::init() {
-    for (int i = 0; i < 12; i++) {
-        digits[i] = 0;
+    const int digitCount = sizeof(_digits)/sizeof(_digits[0]);
+    if (digitCount > 18) {
+        printf("WARNING: frequency_select digitCount > 18 can lead out of range issues\n");
     }
+    _isNegative = false;
+    for (int i = 0; i < digitCount; i++) {
+        _digits[i] = 0;
+    }
+    // maxValue = 10^digitCount - 1
+    int64_t maxValue = 1;
+    for (int i=0; i < digitCount; i++) {
+        maxValue *= 10;
+    }
+    maxValue -= 1;
+    setLimits(-maxValue, maxValue);
 }
 
 void FrequencySelect::onPosChange() {
     ImVec2 digitSz = ImGui::CalcTextSize("0");
-    ImVec2 commaSz = ImGui::CalcTextSize(".");
-    int digitHeight = digitSz.y;
-    int digitWidth = digitSz.x;
-    int commaOffset = 0;
-    for (int i = 0; i < 12; i++) {
-        digitTopMins[i] = ImVec2(widgetPos.x + (i * digitWidth) + commaOffset, widgetPos.y);
-        digitBottomMins[i] = ImVec2(widgetPos.x + (i * digitWidth) + commaOffset, widgetPos.y + (digitHeight / 2));
-
-        digitTopMaxs[i] = ImVec2(widgetPos.x + (i * digitWidth) + commaOffset + digitWidth, widgetPos.y + (digitHeight / 2));
-        digitBottomMaxs[i] = ImVec2(widgetPos.x + (i * digitWidth) + commaOffset + digitWidth, widgetPos.y + digitHeight);
-
-        if ((i + 1) % 3 == 0 && i < 11) {
-            commaOffset += commaSz.x;
+    ImVec2 groupSz = ImGui::CalcTextSize(groupSymbol);
+    ImVec2 minusSz = ImGui::CalcTextSize(minusSymbol);
+    ImVec2 drawOffset  = _widgetPos + ImVec2(minusSz.x, 0);
+    const int digitCount = sizeof(_digits)/sizeof(_digits[0]);
+    for (int i = 0; i < digitCount; i++) {
+        _digitTop[i]    = ImRect(drawOffset, drawOffset + ImVec2(digitSz.x, digitSz.y / 2));
+        _digitBottom[i] = ImRect(drawOffset + ImVec2(0, digitSz.y / 2), drawOffset + digitSz);
+        drawOffset.x += digitSz.x;
+        if ((digitCount-1-i) % 3 == 0 && i < digitCount-1) {
+            drawOffset.x += groupSz.x;
         }
     }
 }
 
 void FrequencySelect::incrementDigit(int i) {
-    if (i < 0) {
+    const int digitCount = sizeof(_digits)/sizeof(_digits[0]);
+    if (i < 0 || i >= digitCount || (i==0 && _digits[i] >= 9)) {
         return;
     }
-    if (digits[i] < 9) {
-        digits[i]++;
-    }
-    else {
-        digits[i] = 0;
-        incrementDigit(i - 1);
-    }
-    frequencyChanged = true;
-}
-
-void FrequencySelect::decrementDigit(int i) {
-    if (i < 0) {
-        return;
-    }
-    if (digits[i] > 0) {
-        digits[i]--;
-    }
-    else {
-        if (i == 0) { return; }
-
-        // Check if there are non zero digits afterwards
-        bool otherNoneZero = false;
+    _digits[i] = std::clamp<int>(_digits[i], 0, 9);
+    if (_digits[i] < 9) {
+        _digits[i]++;
+        frequencyChanged = true;
+    } else {
+        bool canCarry = false;
         for (int j = i - 1; j >= 0; j--) {
-            if (digits[j] > 0) {
-                otherNoneZero = true;
+            if (_digits[j] < 9) {
+                canCarry = true;
                 break;
             }
         }
-        if (!otherNoneZero) { return; }
+        if (canCarry) {
+            _digits[i] = 0;
+            frequencyChanged = true;
+            incrementDigit(i - 1);
+        }
+    }
+}
+void FrequencySelect::decrementDigit(int i) {
+    const int digitCount = sizeof(_digits)/sizeof(_digits[0]);
+    if (i < 0 || i >= digitCount) {
+        return;
+    }
+    _digits[i] = std::clamp<int>(_digits[i], 0, 9);
+    if (_digits[i] > 0) {
+        _digits[i]--;
 
-        digits[i] = 9;
-        decrementDigit(i - 1);
+        bool isAllZero = true;
+        for (int j=0; j < digitCount; j++) {
+            if (_digits[j] > 0) {
+                isAllZero = false;
+                break;
+            }
+        }
+        if (isAllZero) {
+            _isNegative = false;
+        }
+    }
+    else {
+        bool canCarry = false;
+        for (int j = i - 1; j >= 0; j--) {
+            if (_digits[j] > 0) {
+                canCarry = true;
+                break;
+            }
+        }
+        if (canCarry) { 
+            _digits[i] = 9;
+            decrementDigit(i - 1);
+        } else {
+            _digits[i] = 1;              // crossing zero
+            _isNegative = !_isNegative;
+        }
     }
     frequencyChanged = true;
+}
+void FrequencySelect::digitUp(int i) {
+    if (!_isNegative) incrementDigit(i);
+    else decrementDigit(i);
+}
+void FrequencySelect::digitDown(int i) {
+    if (!_isNegative) decrementDigit(i);
+    else incrementDigit(i);
 }
 
 void FrequencySelect::moveCursorToDigit(int i) {
     double xpos, ypos;
     backend::getMouseScreenPos(xpos, ypos);
-    double nxpos = (digitTopMaxs[i].x + digitTopMins[i].x) / 2.0;
+    double nxpos = (_digitTop[i].Max.x + _digitTop[i].Min.x) / 2.0;
     backend::setMouseScreenPos(nxpos, ypos);
 }
 
 void FrequencySelect::draw() {
-    auto window = ImGui::GetCurrentWindow();
-    widgetPos = ImGui::GetWindowContentRegionMin();
-    ImVec2 cursorPos = ImGui::GetCursorPos();
-    widgetPos.x += window->Pos.x + cursorPos.x;
     ImGui::PushFont(style::bigFont);
-    ImVec2 digitSz = ImGui::CalcTextSize("0");
-    ImVec2 commaSz = ImGui::CalcTextSize(".");
-    widgetPos.y = window->Pos.y + cursorPos.y - ((digitSz.y / 2.0f) - ceilf(15 * style::uiScale) - 5);
 
-    if (widgetPos.x != lastWidgetPos.x || widgetPos.y != lastWidgetPos.y) {
-        lastWidgetPos = widgetPos;
+    const ImVec2 digitSz = ImGui::CalcTextSize("0");
+    const ImVec2 groupSz = ImGui::CalcTextSize(groupSymbol);
+    const ImVec2 minusSz = ImGui::CalcTextSize(minusSymbol);
+
+    auto window = ImGui::GetCurrentWindow();
+    ImVec2 cursorPos = ImGui::GetCursorPos();
+    
+    ImVec2 paddingFix = ImGui::GetWindowContentRegionMin() * 0.3125;
+    _widgetPos = window->Pos + cursorPos - paddingFix;
+
+    if (_widgetPos.x != _lastWidgetPos.x || _widgetPos.y != _lastWidgetPos.y) {
+        _lastWidgetPos = _widgetPos;
         onPosChange();
     }
 
-    ImU32 disabledColor = ImGui::GetColorU32(ImGuiCol_Text, 0.3f);
-    ImU32 textColor = ImGui::GetColorU32(ImGuiCol_Text);
+    const ImU32 textColor0 = ImGui::GetColorU32(ImGuiCol_Text, 0.3f); // not meaning zeros
+    const ImU32 textColor1 = ImGui::GetColorU32(ImGuiCol_Text);       // meaning digits
 
+    const int digitCount = sizeof(_digits)/sizeof(_digits[0]);
+
+    ImVec2 drawOffset = _widgetPos;
+    ImGui::ItemSize(ImRect(drawOffset, _digitBottom[digitCount-1].Max - paddingFix));
+
+    if (_isNegative) {
+        window->DrawList->AddText(drawOffset, textColor1, minusSymbol);
+    }
+    drawOffset.x += minusSz.x;
     
-    int digitWidth = digitSz.x;
-    int commaOffset = 0;
-    float textOffset = 11.0f * style::uiScale;
     bool zeros = true;
-
-    ImGui::ItemSize(ImRect(digitTopMins[0], ImVec2(digitBottomMaxs[11].x + 15, digitBottomMaxs[11].y)));
-
-    for (int i = 0; i < 12; i++) {
-        if (digits[i] != 0) {
+    for (int i = 0; i < digitCount; i++) {
+        if (_digits[i] != 0) {
             zeros = false;
         }
-        sprintf(buf, "%d", digits[i]);
-        window->DrawList->AddText(ImVec2(widgetPos.x + (i * digitWidth) + commaOffset, widgetPos.y),
-                                  zeros ? disabledColor : textColor, buf);
-        if ((i + 1) % 3 == 0 && i < 11) {
-            commaOffset += commaSz.x;
-            window->DrawList->AddText(ImVec2(widgetPos.x + (i * digitWidth) + commaOffset + textOffset, widgetPos.y),
-                                      zeros ? disabledColor : textColor, ".");
+        const char buf[] = { (char)('0' + _digits[i]), 0};
+        window->DrawList->AddText(drawOffset, zeros && i != digitCount-1 ? textColor0 : textColor1, buf);
+        drawOffset.x += digitSz.x;
+        if ((digitCount-1-i) % 3 == 0 && i < digitCount-1) {
+            window->DrawList->AddText(drawOffset, zeros ? textColor0 : textColor1, groupSymbol);
+            drawOffset.x += groupSz.x;
         }
     }
 
     if (ImGui::IsWindowHovered(ImGuiHoveredFlags_None) && 
         !gui::mainWindow.lockWaterfallControls) 
     {
+        ImGuiID id = ImGui::GetID("frequency_select");
+        ImGui::SetKeyOwner(ImGuiKey_UpArrow, id);
+        ImGui::SetKeyOwner(ImGuiKey_DownArrow, id);
+        ImGui::SetKeyOwner(ImGuiKey_LeftArrow, id);
+        ImGui::SetKeyOwner(ImGuiKey_RightArrow, id);
+
         ImVec2 mousePos = ImGui::GetMousePos();
+        int mouseWheel = ImGui::GetIO().MouseWheel;
+        auto inputChars = ImGui::GetIO().InputQueueCharacters;
         bool leftClick = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
         bool rightClick = ImGui::IsMouseClicked(ImGuiMouseButton_Right);
-        int mw = ImGui::GetIO().MouseWheel;
         bool onDigit = false;
         bool hovered = false;
 
-        for (int i = 0; i < 12; i++) {
+        for (int i = 0; i < digitCount; i++) {
             onDigit = false;
-            if (isInArea(mousePos, digitTopMins[i], digitTopMaxs[i])) {
-                window->DrawList->AddRectFilled(digitTopMins[i], digitTopMaxs[i], IM_COL32(255, 0, 0, 75));
+            if (_digitTop[i].Contains(mousePos)) {
+                window->DrawList->AddRectFilled(_digitTop[i].Min, _digitTop[i].Max, IM_COL32(255, 0, 0, 75));
                 if (leftClick) {
-                    incrementDigit(i);
+                    digitUp(i);
                 }
                 onDigit = true;
             }
-            if (isInArea(mousePos, digitBottomMins[i], digitBottomMaxs[i])) {
-                window->DrawList->AddRectFilled(digitBottomMins[i], digitBottomMaxs[i], IM_COL32(0, 0, 255, 75));
+            if (_digitBottom[i].Contains(mousePos)) {
+                window->DrawList->AddRectFilled(_digitBottom[i].Min, _digitBottom[i].Max, IM_COL32(0, 0, 255, 75));
                 if (leftClick) {
-                    decrementDigit(i);
+                    digitDown(i);
                 }
                 onDigit = true;
             }
             if (onDigit) {
                 hovered = true;
                 if (rightClick || (ImGui::IsKeyPressed(ImGuiKey_Delete) || ImGui::IsKeyPressed(ImGuiKey_Enter) || ImGui::IsKeyPressed(ImGuiKey_KeypadEnter))) {
-                    for (int j = i; j < 12; j++) {
-                        digits[j] = 0;
+                    for (int j = i; j < digitCount; j++) {
+                        _digits[j] = 0;
                     }
-
                     frequencyChanged = true;
                 }
                 if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
-                    incrementDigit(i);
+                    digitUp(i);
                 }
                 if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
-                    decrementDigit(i);
+                    digitDown(i);
                 }
                 if ((ImGui::IsKeyPressed(ImGuiKey_LeftArrow) || ImGui::IsKeyPressed(ImGuiKey_Backspace)) && i > 0) {
                     moveCursorToDigit(i - 1);
                 }
-                if (ImGui::IsKeyPressed(ImGuiKey_RightArrow) && i < 11) {
+                if (ImGui::IsKeyPressed(ImGuiKey_RightArrow) && i < digitCount-1) {
                     moveCursorToDigit(i + 1);
                 }
 
-                auto chars = ImGui::GetIO().InputQueueCharacters;
-
                 // For each keyboard characters, type it
-                for (int j = 0; j < chars.Size; j++) {
-                    if (chars[j] >= '0' && chars[j] <= '9') {
-                        digits[i + j] = chars[j] - '0';
-                        if ((i + j) < 11) { moveCursorToDigit(i + j + 1); }
+                for (int j = 0; j < inputChars.Size; j++) {
+                    if (inputChars[j] >= '0' && inputChars[j] <= '9') {
+                        _digits[i + j] = inputChars[j] - '0';
+                        if ((i + j) < digitCount) { moveCursorToDigit(i + j + 1); }
                         frequencyChanged = true;
                     }
                 }
 
-                if (mw != 0) {
-                    int count = abs(mw);
+                if (mouseWheel != 0) {
+                    auto count = abs(mouseWheel);
                     for (int j = 0; j < count; j++) {
-                        mw > 0 ? incrementDigit(i) : decrementDigit(i);
+                        if (mouseWheel > 0) { 
+                            digitUp(i);
+                        } else { 
+                            digitDown(i);
+                        }
                     }
                 }
             }
         }
         digitHovered = hovered;
     }
-
-    uint64_t freq = 0;
-    for (int i = 0; i < 12; i++) {
-        freq += digits[i] * pow(10, 11 - i);
-    }
-
-    uint64_t orig = freq;
-    freq = std::clamp<uint64_t>(freq, minFreq, maxFreq);
-    if (freq != orig && limitFreq) {
-        setFrequency(freq);
-    }
-    else {
-        frequency = orig;
-    }
-
+    setFrequency(getDigitFrequency());
     ImGui::PopFont();
+}
 
-    ImGui::SetCursorPosX(digitBottomMaxs[11].x + (17.0f * style::uiScale));
+int64_t FrequencySelect::getDigitFrequency() const {
+    const int digitCount = sizeof(_digits)/sizeof(_digits[0]);
+    int64_t freq = 0;
+    int64_t mult = 1;
+    for (int i=digitCount-1; i >= 0; i--) {
+        freq += _digits[i] * mult;
+        mult *= 10;
+    }
+    if (_isNegative) {
+        freq = -freq;
+    }
+    return freq;
 }
 
 void FrequencySelect::setFrequency(int64_t freq) {
-    freq = std::max<int64_t>(0, freq);
-    int i = 11;
-    for (uint64_t f = freq; i >= 0; i--) {
-        digits[i] = f % 10;
-        f -= digits[i];
+    if (freq != _frequency && (freq < _minFreq || freq > _maxFreq)) {
+        //printf("setFrequency: reject %" PRId64 " due to being outside limits [%s, %s]\n", freq, utils::formatFreq(minFreq).c_str(), utils::formatFreq(maxFreq).c_str());
+        freq = _frequency;
+        frequencyChanged = true;
+    }
+    _isNegative = freq < 0;
+    const int digitCount = sizeof(_digits)/sizeof(_digits[0]);
+    int64_t f = std::abs<int64_t>(freq);
+    for (int i = digitCount-1; i >= 0; i--) {
+        _digits[i] = f % 10;
+        f -= _digits[i];
         f /= 10;
     }
-    frequency = freq;
+    int64_t newFreq = getDigitFrequency();
+    if (_frequency != newFreq) {
+        //printf("setFrequency: %" PRId64 " => %" PRId64 "\n", frequency, newFreq);
+        //dump_stack();
+        frequencyChanged = true;
+        _frequency = newFreq;
+    }
+}
+
+int64_t FrequencySelect::getFrequency() const {
+    return _frequency;
+}
+
+void FrequencySelect::setLimits(int64_t min, int64_t max) {
+    _minFreq = min;
+    _maxFreq = max;
+    //printf("_minFreq: %" PRId64 "\n", _minFreq);
+    //printf("_maxFreq: %" PRId64 "\n", _maxFreq);
 }
