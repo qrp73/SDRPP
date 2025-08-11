@@ -7,6 +7,7 @@
 #include <gui/icons.h>
 #include <version.h>
 #include <utils/flog.h>
+#include <utils/freq_formatting.h>
 #include <gui/widgets/bandplan.h>
 #include <stb_image.h>
 #include <config.h>
@@ -53,7 +54,7 @@ namespace core {
         gui::mainWindow.setViewBandwidthSlider(1.0);
 
         // Debug logs
-        flog::info("New DSP samplerate: {0} (source samplerate is {1})", effectiveSr, samplerate);
+        flog::info("New DSP samplerate: {0} (source samplerate is {1})", utils::formatFreq(effectiveSr), utils::formatFreq(samplerate));
     }
 };
 
