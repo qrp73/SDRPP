@@ -185,6 +185,9 @@ private:
         AudioSourceModule* _this = (AudioSourceModule*)ctx;
         if (_this->running) { return; }
         
+        // If no device is selected, give up
+        if (_this->selectedDevice.empty()) { return; }        
+        
         // Stream options
         RtAudio::StreamParameters parameters;
         parameters.deviceId = _this->devices[_this->devId].id;
