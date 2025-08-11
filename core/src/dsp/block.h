@@ -45,6 +45,7 @@ namespace dsp {
 
         void tempStart() {
             assert(_block_init);
+            std::lock_guard<std::recursive_mutex> lck(ctrlMtx);
             if (!tempStopDepth || --tempStopDepth) { return; }
             if (tempStopped) {
                 doStart();
@@ -54,6 +55,7 @@ namespace dsp {
 
         void tempStop() {
             assert(_block_init);
+            std::lock_guard<std::recursive_mutex> lck(ctrlMtx);
             if (tempStopDepth++) { return; }
             if (running && !tempStopped) {
                 doStop();
