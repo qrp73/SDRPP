@@ -271,11 +271,10 @@ void FrequencySelect::setFrequency(int64_t freq) {
     }
     _isNegative = freq < 0;
     const int digitCount = sizeof(_digits)/sizeof(_digits[0]);
-    int64_t f = std::abs<int64_t>(freq);
+    uint64_t absFreq = freq < 0 ? -freq:freq;
     for (int i = digitCount-1; i >= 0; i--) {
-        _digits[i] = f % 10;
-        f -= _digits[i];
-        f /= 10;
+        _digits[i] = absFreq % 10;
+        absFreq /= 10;
     }
     int64_t newFreq = getDigitFrequency();
     if (_frequency != newFreq) {
