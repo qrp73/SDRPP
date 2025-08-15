@@ -580,7 +580,8 @@ private:
                 ImGui::TableSetColumnIndex(0);
                 ImVec2 min = ImGui::GetCursorPos();
 
-                if (ImGui::Selectable((name + "##_freq_mgr_bkm_name_" + _this->name).c_str(), &bm.selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_SelectOnClick)) {
+                bool selected = bm.selected;
+                if (ImGui::Selectable((name + "##_freq_mgr_bkm_name_" + _this->name).c_str(), &selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_SelectOnClick)) {
                     // if shift or control isn't pressed, deselect all others
                     if (!ImGui::GetIO().KeyShift && !ImGui::GetIO().KeyCtrl) {
                         for (auto& [_name, _bm] : _this->_sortedBookmarks) {
@@ -588,8 +589,15 @@ private:
                             _bm.selected = false;
                         }
                     }
+                    bm.selected = true;
                 }
-                if (ImGui::TableGetHoveredColumn() >= 0 && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                    // deselect all others
+                    for (auto& [_name, _bm] : _this->_sortedBookmarks) {
+                        if (name == _name) { continue; }
+                        _bm.selected = false;
+                    }   
+                    bm.selected = true;
                     applyBookmark(bm, gui::waterfall.selectedVFO);
                 }
 
