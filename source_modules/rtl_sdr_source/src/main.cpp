@@ -202,7 +202,7 @@ public:
             config.conf["devices"][selectedDevName]["tunerAgc"] = tunerAgc;
             config.conf["devices"][selectedDevName]["gain"] = gainId;
         }
-        if (gainId >= gainList.size()) { gainId = gainList.size() - 1; }
+        if (gainId < 0 || gainId >= gainList.size()) { gainId = std::max<int>(0, gainList.size() - 1); }
 
         // Load config
         if (config.conf["devices"][selectedDevName].contains("sampleRate")) {
@@ -251,6 +251,10 @@ public:
     }
 
 private:
+    inline int getGainById(int id) {
+        return id >= 0 && id < gainList.size() ? gainList[id] : 0;
+    }
+
 
     static void menuSelected(void* ctx) {
         RTLSDRSourceModule* _this = (RTLSDRSourceModule*)ctx;
@@ -291,13 +295,13 @@ private:
         rtlsdr_set_direct_sampling(_this->openDev, _this->directSamplingMode);
         rtlsdr_set_bias_tee(_this->openDev, _this->biasT);
         rtlsdr_set_agc_mode(_this->openDev, _this->rtlAgc);
-        rtlsdr_set_tuner_gain(_this->openDev, _this->gainList[_this->gainId]);
+        rtlsdr_set_tuner_gain(_this->openDev, _this->getGainById(_this->gainId));
         if (_this->tunerAgc) {
             rtlsdr_set_tuner_gain_mode(_this->openDev, 0);
         }
         else {
             rtlsdr_set_tuner_gain_mode(_this->openDev, 1);
-            rtlsdr_set_tuner_gain(_this->openDev, _this->gainList[_this->gainId]);
+            rtlsdr_set_tuner_gain(_this->openDev, _this->getGainById(_this->gainId));
         }
         rtlsdr_set_offset_tuning(_this->openDev, _this->offsetTuning);
 
@@ -392,7 +396,7 @@ private:
                     }
                     else {
                         rtlsdr_set_tuner_gain_mode(_this->openDev, 1);
-                        rtlsdr_set_tuner_gain(_this->openDev, _this->gainList[_this->gainId]);
+                        rtlsdr_set_tuner_gain(_this->openDev, _this->getGainById(_this->gainId));
                     }
                 }
             }
@@ -426,7 +430,7 @@ private:
         if (_this->serverMode) {
             if (SmGui::SliderInt(CONCAT("##_rtlsdr_gain_", _this->name), &_this->gainId, 0, _this->gainList.size() - 1, SmGui::FMT_STR_NONE)) {
                 if (_this->running) {
-                    rtlsdr_set_tuner_gain(_this->openDev, _this->gainList[_this->gainId]);
+                    rtlsdr_set_tuner_gain(_this->openDev, _this->getGainById(_this->gainId));
                 }
                 if (_this->selectedDevName != "") {
                     config.acquire();
@@ -437,10 +441,14 @@ private:
         }
         else {
             char dbTxt[128] = {0};
-            sprintf(dbTxt, "%.1f dB", (float)_this->gainList[_this->gainId] / 10.0f);
-            if (ImGui::SliderInt(CONCAT("##_rtlsdr_gain_", _this->name), &_this->gainId, 0, _this->gainList.size() - 1, dbTxt)) {
+            if (_this->gainId >= 0 && _this->gainId < _this->gainList.size()) {
+                snprintf(dbTxt, sizeof(dbTxt), "%.1f dB", (float)_this->gainList[_this->gainId] / 10.0f);
+            } else {
+                snprintf(dbTxt, sizeof(dbTxt), "- dB");
+            }
+            if (ImGui::SliderInt(CONCAT("##_rtlsdr_gain_", _this->name), &_this->gainId, 0, std::max<int>(0, _this->gainList.size() - 1), dbTxt)) {
                 if (_this->running) {
-                    rtlsdr_set_tuner_gain(_this->openDev, _this->gainList[_this->gainId]);
+                    rtlsdr_set_tuner_gain(_this->openDev, _this->getGainById(_this->gainId));
                 }
                 if (_this->selectedDevName != "") {
                     config.acquire();
@@ -494,7 +502,7 @@ private:
                 }
                 else {
                     rtlsdr_set_tuner_gain_mode(_this->openDev, 1);
-                    rtlsdr_set_tuner_gain(_this->openDev, _this->gainList[_this->gainId]);
+                    rtlsdr_set_tuner_gain(_this->openDev, _this->getGainById(_this->gainId));
                 }
             }
             if (_this->selectedDevName != "") {
