@@ -121,7 +121,7 @@ private:
                     core::modComManager.callInterface(vfoName, RADIO_IFACE_CMD_SET_BANDWIDTH, &bandwidth, NULL);
                 }
             }
-            if (bm.loPresent) {
+            if (bm.loPresent && !gui::waterfall.VFOMoveSingleClick) { // VFOMoveSingleClick = tuningMode == tuner::TUNER_MODE_CENTER; see main_window.cpp
                 tuner::tune(tuner::TUNER_MODE_IQ_ONLY, vfoName, bm.lo);
             }
             tuner::tune(tuner::TUNER_MODE_NORMAL, vfoName, bm.frequency);
