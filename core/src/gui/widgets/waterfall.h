@@ -31,19 +31,19 @@ namespace ImGui {
             _REF_COUNT
         };
 
-        double generalOffset;
-        double centerOffset;
-        double lowerOffset;
-        double upperOffset;
-        double bandwidth;
-        double snapInterval = 5000;
+        double generalOffset = 0;
+        double centerOffset  = 0;
+        double lowerOffset   = -1/2;
+        double upperOffset   = +1/2;
+        double bandwidth     = 1;
+        double snapInterval  = 5000;
         int reference = REF_CENTER;
 
         double notchOffset = 0;
         bool notchVisible = false;
 
-        bool leftClamped;
-        bool rightClamped;
+        bool leftClamped = false;
+        bool rightClamped = false;
 
         ImVec2 rectMin;
         ImVec2 rectMax;
@@ -71,9 +71,9 @@ namespace ImGui {
         bool lineVisible = true;
         bool bandwidthChanged = false;
 
-        double minBandwidth;
-        double maxBandwidth;
-        bool bandwidthLocked;
+        double minBandwidth = 0;
+        double maxBandwidth = 0;
+        bool bandwidthLocked = false;
 
         ImU32 color = IM_COL32(255, 255, 255, 50);
 
