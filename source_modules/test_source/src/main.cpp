@@ -192,7 +192,7 @@ ConfigManager config;
 class TestSourceModule : public ModuleManager::Instance {
 public:
     TestSourceModule(std::string name) {//: fileSelect("", { "Wav IQ Files (*.wav)", "*.wav", "All Files", "*" }) {
-        flog::warn("TestSource: ctor()");
+        //flog::warn("TestSource: ctor()");
         this->_name = name;
 
         if (core::args["server"].b()) { return; }
@@ -425,7 +425,7 @@ private:
 };
 
 MOD_EXPORT void _INIT_() {
-    flog::warn("TestSource: _INIT_()");
+    //flog::warn("TestSource: _INIT_()");
     json def = json({});
     config.setPath(core::args["root"].s() + "/test_source_config.json");
     config.load(def);
