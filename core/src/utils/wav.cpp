@@ -8,6 +8,7 @@
 #include <utils/flog.h>
 #include "wav.h"
 
+using runtime_error = std::runtime_error;
 
 namespace wav {
     const char* MP3_FILE_TYPE           = "MP3 ";
@@ -32,8 +33,8 @@ namespace wav {
     
     Writer::Writer(int channels, uint64_t samplerate, Format format, SampleType type) {
         // Validate channels and samplerate
-        if (channels < 1) { throw std::runtime_error("Channel count must be greater or equal to 1"); }
-        if (!samplerate) { throw std::runtime_error("Samplerate must be non-zero"); }
+        if (channels < 1) { throw runtime_error("Channel count must be greater or equal to 1"); }
+        if (!samplerate) { throw runtime_error("Samplerate must be non-zero"); }
         
         // Initialize variables
         _channels = channels;
@@ -65,12 +66,15 @@ namespace wav {
                 flog::error("lame_init() failed");
                 return false;
             }
-            lame_set_num_channels(_lame, _channels);
+            lame_set_write_id3tag_automatic(_lame, 1);
             lame_set_in_samplerate(_lame, _samplerate);
-            lame_set_quality(_lame, 2); // 2 - high quality
+            lame_set_num_channels(_lame, _channels);
+            // https://sourceforge.net/p/lame/svn/HEAD/tree/trunk/lame/include/lame.h
             lame_set_VBR(_lame, vbr_default);
+            lame_set_VBR_q(_lame, 5);  // VBR quality level.  0=highest  9=lowest [0=32.5kB/s ;2=24.5kB/s; 4=20kB/s; 5=17kB/s; 7=12.8kB/s; 9=10.5kB/s]
             //lame_set_VBR(_lame, vbr_off);
             //lame_set_brate(_lame, 192);
+            lame_set_quality(_lame, 2); // 0=best (very slow); 2=near-best quality, not too slow; 5=good quality, fast; 7=ok quality, really fast; 9=worst;
             if (lame_init_params(_lame) < 0) {
                 flog::error("lame_init_params() failed");
                 lame_close(_lame);
@@ -78,8 +82,14 @@ namespace wav {
                 return false;
             }
             _mp3Buffer.resize(1.25 * STREAM_BUFFER_SIZE + 7200);
-            rw.open(path, MP3_FILE_TYPE);
-            return rw.isOpen();
+            _mp3file = fopen(path.c_str(), "wb");
+            if (!_mp3file) {
+                flog::error("fopen() failed: {} [\"{}\"]", strerror(errno), path);
+                lame_close(_lame);
+                _lame = nullptr;
+                return false;
+            }
+            return true;            
         }        
         if (_format == FORMAT_FLAC) {
             if (!isIntegerSampleType(_type)) {
@@ -166,12 +176,15 @@ namespace wav {
     void Writer::close() {
         std::lock_guard<std::recursive_mutex> lck(mtx);
         
-        if (_lame) {
+        if (_lame && _mp3file) {
             int bytes = lame_encode_flush(_lame, _mp3Buffer.data(), _mp3Buffer.size());
-            if (bytes > 0) rw.write(_mp3Buffer.data(), bytes);
+            if (bytes > 0) fwrite(_mp3Buffer.data(), 1, bytes, _mp3file);
             lame_close(_lame);
             _lame = nullptr;
-            if (rw.isOpen()) rw.close();
+            if (fclose(_mp3file) != 0) {
+                flog::error("fclose() failed: {}", strerror(errno));
+            }
+            _mp3file = nullptr;
         }
         if (_flacEncoder) {
             FLAC__stream_encoder_finish(_flacEncoder);
@@ -206,34 +219,34 @@ namespace wav {
     void Writer::setChannels(int channels) {
         std::lock_guard<std::recursive_mutex> lck(mtx);
         // Do not allow settings to change while open
-        if (this->isOpenInt()) { throw std::runtime_error("Cannot change parameters while file is open"); }
+        if (this->isOpenInt()) { throw runtime_error("Cannot change parameters while file is open"); }
 
         // Validate channel count
-        if (channels < 1) { throw std::runtime_error("Channel count must be greater or equal to 1"); }
+        if (channels < 1) { throw runtime_error("Channel count must be greater or equal to 1"); }
         _channels = channels;
     }
 
     void Writer::setSamplerate(uint64_t samplerate) {
         std::lock_guard<std::recursive_mutex> lck(mtx);
         // Do not allow settings to change while open
-        if (this->isOpenInt()) { throw std::runtime_error("Cannot change parameters while file is open"); }
+        if (this->isOpenInt()) { throw runtime_error("Cannot change parameters while file is open"); }
 
         // Validate samplerate
-        if (!samplerate) { throw std::runtime_error("Samplerate must be non-zero"); }
+        if (!samplerate) { throw runtime_error("Samplerate must be non-zero"); }
         _samplerate = samplerate;
     }
 
     void Writer::setFormat(Format format) {
         std::lock_guard<std::recursive_mutex> lck(mtx);
         // Do not allow settings to change while open
-        if (this->isOpenInt()) { throw std::runtime_error("Cannot change parameters while file is open"); }
+        if (this->isOpenInt()) { throw runtime_error("Cannot change parameters while file is open"); }
         _format = format;
     }
 
     void Writer::setSampleType(SampleType type) {
         std::lock_guard<std::recursive_mutex> lck(mtx);
         // Do not allow settings to change while open
-        if (this->isOpenInt()) { throw std::runtime_error("Cannot change parameters while file is open"); }
+        if (this->isOpenInt()) { throw runtime_error("Cannot change parameters while file is open"); }
         _type = type;
     }
     
@@ -249,7 +262,7 @@ namespace wav {
     void Writer::write(float* samples, int count) {
         std::lock_guard<std::recursive_mutex> lck(mtx);
         
-        if (_format == FORMAT_MP3 && _lame) {
+        if (_format == FORMAT_MP3 && _lame && _mp3file) {
             std::vector<int16_t> pcmSamples(count * _channels);
             int sampelCount = count * _channels;
             for (int i = 0; i < sampelCount; i++) {
@@ -261,7 +274,7 @@ namespace wav {
             } else {
                 bytes = lame_encode_buffer_interleaved(_lame, pcmSamples.data(), count, _mp3Buffer.data(), _mp3Buffer.size());
             }            
-            if (bytes > 0) rw.write(_mp3Buffer.data(), bytes);
+            if (bytes > 0) fwrite(_mp3Buffer.data(), 1, bytes, _mp3file);
             samplesWritten += count;
             return;
         }        

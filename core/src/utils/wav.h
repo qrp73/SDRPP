@@ -64,6 +64,7 @@ namespace wav {
         // MP3
         lame_t _lame = nullptr;
         std::vector<uint8_t> _mp3Buffer;
+        FILE* _mp3file = nullptr;
         // FLAC
         FLAC__StreamEncoder* _flacEncoder = nullptr;
         //WAV
