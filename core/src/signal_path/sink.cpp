@@ -50,12 +50,25 @@ void SinkManager::Stream::stop() {
 }
 
 void SinkManager::Stream::setVolume(float volume) {
-    guiVolume = volume;
+    if (std::isnan(volume) || std::isinf(volume)) {
+        volume = 0;
+    }
+    volume = std::clamp<float>(volume, 0.0f, 1.0f);
+    guiVolume_Lin = volume;
+    
+    const float eps = std::numeric_limits<float>::epsilon();    
+    float dbf = 20.0f * log10f(guiVolume_Lin + eps) * 10.0f;
+    if (std::isnan(dbf) || std::isinf(dbf)) {
+        guiVolume_Log = 0;
+    } else {
+        guiVolume_Log = std::clamp(static_cast<int>(std::round(dbf)), guiVolume_LogMin, 0);
+    }    
+
     volumeAjust.setVolume(volume);
 }
 
 float SinkManager::Stream::getVolume() {
-    return guiVolume;
+    return guiVolume_Lin;
 }
 
 float SinkManager::Stream::getSampleRate() {
@@ -292,8 +305,25 @@ void SinkManager::showVolumeSlider(std::string name, std::string prefix, float w
 
     ImGui::SetNextItemWidth(width - height - sliderOffset);
     ImGui::SetCursorPosY(ypos + ((height - sliderHeight) / 2.0f) + btnBorder);
-    if (ImGui::SliderFloat((prefix + name).c_str(), &stream->guiVolume, 0.0f, 1.0f, "")) {
-        stream->setVolume(stream->guiVolume);
+    
+    char txtVolume[128] = {0};
+    if (stream->getVolume() == 0.0f) {
+        snprintf(txtVolume, sizeof(txtVolume), "OFF");
+    } else {
+        snprintf(txtVolume, sizeof(txtVolume), "%.1f dB", stream->guiVolume_Log/10.0);
+    }
+#if 1    
+    // logarithmic scale slider
+    if (ImGui::SliderInt((prefix + name).c_str(), &stream->guiVolume_Log, stream->guiVolume_LogMin, 0, txtVolume)) {
+        float volume = stream->guiVolume_Log <= stream->guiVolume_LogMin ? 0.0f : 
+                       stream->guiVolume_Log >= 0 ? 1.0f : 
+                       powf(10.0f, (stream->guiVolume_Log/10.0f)/20.0f);
+        stream->setVolume(volume);
+#else
+    // linear scale slider
+    if (ImGui::SliderFloat((prefix + name).c_str(), &stream->guiVolume_Lin, 0.0f, 1.0f, txtVolume)) {
+        stream->setVolume(stream->guiVolume_Lin);
+#endif
         core::configManager.acquire();
         saveStreamConfig(name);
         core::configManager.release(true);
@@ -303,7 +333,7 @@ void SinkManager::showVolumeSlider(std::string name, std::string prefix, float w
 }
 
 void SinkManager::loadStreamConfig(std::string name) {
-    json conf = core::configManager.conf["streams"][name];
+    nlohmann::json conf = core::configManager.conf["streams"][name];
     SinkManager::Stream* stream = streams[name];
     std::string provName = conf["sink"];
     if (providers.find(provName) == providers.end()) {
@@ -326,7 +356,7 @@ void SinkManager::loadStreamConfig(std::string name) {
 
 void SinkManager::saveStreamConfig(std::string name) {
     SinkManager::Stream* stream = streams[name];
-    json conf;
+    nlohmann::json conf;
     conf["sink"] = providerNames[stream->providerId];
     conf["volume"] = stream->getVolume();
     conf["muted"] = stream->volumeAjust.getMuted();

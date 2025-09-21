@@ -62,7 +62,9 @@ public:
         std::string providerName = "";
         bool running = false;
 
-        float guiVolume = 1.0f;
+        float     guiVolume_Lin    = 1.0f;
+        int       guiVolume_Log    = 0;         // log scale volume with 0.1 dB resolution
+        const int guiVolume_LogMin = -40*10;    // min log scale volume (switch off threshold)
     };
 
     struct SinkProvider {
