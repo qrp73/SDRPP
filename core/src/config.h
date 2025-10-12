@@ -1,33 +1,40 @@
 #pragma once
+#include <atomic>
 #include <json.hpp>
 #include <thread>
 #include <string>
 #include <mutex>
 #include <condition_variable>
-
-using nlohmann::json;
+#include <utils/threading.h>
 
 class ConfigManager {
 public:
     ConfigManager();
     ~ConfigManager();
+    // disable copy
+    ConfigManager(const ConfigManager&) = delete;
+    ConfigManager& operator=(const ConfigManager&) = delete;
+    // allow move
+    ConfigManager(ConfigManager&&) = default;
+    ConfigManager& operator=(ConfigManager&&) = default;    
+    
     void setPath(std::string file);
-    void load(json def, bool lock = true);
+    void load(nlohmann::json def, bool lock = true);
     void save(bool lock = true);
     void enableAutoSave();
     void disableAutoSave();
     void acquire();
     void release(bool modified = false);
 
-    json conf;
+    nlohmann::json conf;
 
 private:
     void autoSaveWorker();
 
     std::string path = "";
-    volatile bool changed = false;
-    volatile bool autoSaveEnabled = false;
-    std::thread autoSaveThread;
+    std::atomic<bool> changed{false};
+    std::atomic<bool> autoSaveEnabled{false};
+    threading::thread autoSaveThread;
     std::mutex mtx;
 
     std::mutex termMtx;
