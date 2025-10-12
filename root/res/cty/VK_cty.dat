@@ -1,0 +1,76 @@
+Sabah:                    28:  54:  OC:    5.25:  -117.00:    -8.0:  9M6:
+    9M6,9W6,=9M4CBP,=9M4CKT,=9M4CRB,=9M4CRP,=9M6PO;
+Sarawak:                  28:  54:  OC:    2.80:  -113.88:    -8.0:  9M8:
+    9M8,9W8;
+Manila:                   27:  50:  OC:   14.58:  -121.00:    -8.0:  DU1:
+    4D1,4E1,4F1,4G1,4H1,4I1,DU1,DV1,DW1,DX1,DY1,DZ1;
+Ilcos:                    27:  50:  OC:   16.42:  -120.57:    -8.0:  DU2:
+    4D2,4E2,4F2,4G2,4H2,4I2,DU2,DV2,DW2,DX2,DY2,DZ2;
+Central Luzon:            27:  50:  OC:   15.47:  -120.57:    -8.0:  DU3:
+    4D3,4E3,4F3,4G3,4H3,4I3,DU3,DV3,DW3,DX3,DY3,DZ3;
+Bicol:                    27:  50:  OC:   13.60:  -123.20:    -8.0:  DU4:
+    4D4,4E4,4F4,4G4,4H4,4I4,DU4,DV4,DW4,DX4,DY4,DZ4;
+Eastern Visayas:          27:  50:  OC:   11.28:  -125.02:    -8.0:  DU5:
+    4D5,4E5,4F5,4G5,4H5,4I5,DU5,DV5,DW5,DX5,DY5,DZ5;
+Western Visayas:          27:  50:  OC:   10.75:  -122.97:    -8.0:  DU6:
+    4D6,4E6,4F6,4G6,4H6,4I6,DU6,DV6,DW6,DX6,DY6,DZ6;
+Central Visayas:          27:  50:  OC:   10.32:  -123.90:    -8.0:  DU7:
+    4D7,4E7,4F7,4G7,4H7,4I7,DU7,DV7,DW7,DX7,DY7,DZ7;
+Western Mindanao:         27:  50:  OC:    6.92:  -122.07:    -8.0:  DU8:
+    4D8,4E8,4F8,4G8,4H8,4I8,DU8,DV8,DW8,DX8,DY8,DZ8;
+Northern Mindanao:        27:  50:  OC:    7.10:  -125.62:    -8.0:  DU9:
+    4D9,4E9,4F9,4G9,4H9,4I9,DU9,DV9,DW9,DX9,DY9,DZ9;
+Capital Territory:        30:  59:  OC:  -35.50:  -149.00:   -10.0:  VK1:
+    AX1,VI1,VJ1,VK1,VL1,=VK1RA,=VK1RD,=VK1RF;
+New South Wales:          30:  59:  OC:  -34.00:  -151.00:   -10.0:  VK2:
+    AX2,VI2,VJ2,VK2,VL2,=VK2FR,=VK75FAA;
+Victoria:                 30:  59:  OC:  -38.00:  -145.00:   -10.0:  VK3:
+    AX3,VI3,VJ3,VK3,VL3,=VI75G;
+Queensland:               30:  55:  OC:  -27.50:  -153.00:   -10.0:  VK4:
+    AX4,VI4,VJ4,VK4,VL4,=VK4HG,=VK4JE;
+South Australia:          30:  59:  OC:  -34.90:  -138.60:    -9.0:  VK5:
+    AX5,VI5,VJ5,VK5,VL5,=VK5PAS;
+Western Australia:        29:  58:  OC:  -32.00:  -115.90:    -8.0:  VK6:
+    AX6,VI6,VJ6,VK6,VL6;
+Tasmania:                 30:  59:  OC:  -42.90:  -147.30:   -10.0:  VK7:
+    AX7,VI7,VJ7,VK7,VL7;
+Northern Territory:       29:  55:  OC:  -12.50:  -130.90:    -9.0:  VK8:
+    AX8,VI8,VJ8,VK8,VL8,=VK3ZW;
+Jakarta:                  28:  54:  OC:   -6.20:  -106.80:    -7.0:  YB0:
+    7A0,7B0,7C0,7D0,7E0,7F0,7G0,7H0,7I0,8A0,8B0,8C0,8D0,8E0,8F0,8G0,8H0,8I0,
+    YB0,YC0,YD0,YE0,YF0,YG0,YH0;
+West Java/Banten:         28:  54:  OC:   -6.77:  -107.57:    -7.0:  YB1:
+    7A1,7B1,7C1,7D1,7E1,7F1,7G1,7H1,7I1,8A1,8B1,8C1,8D1,8E1,8F1,8G1,8H1,8I1,
+    YB1,YC1,YD1,YE1,YF1,YG1,YH1;
+Central Java/Yogyakarta:  28:  54:  OC:   -7.32:  -110.17:    -7.0:  YB2:
+    7A2,7B2,7C2,7D2,7E2,7F2,7G2,7H2,7I2,8A2,8B2,8C2,8D2,8E2,8F2,8G2,8H2,8I2,
+    YB2,YC2,YD2,YE2,YF2,YG2,YH2;
+East Java:                28:  54:  OC:   -7.97:  -112.02:    -7.0:  YB3:
+    7A3,7B3,7C3,7D3,7E3,7F3,7G3,7H3,7I3,8A3,8B3,8C3,8D3,8E3,8F3,8G3,8H3,8I3,
+    YB3,YC3,YD3,YE3,YF3,YG3,YH3;
+South Sumatra/Lampung/Ja: 28:  54:  OC:   -3.07:  -103.50:    -7.0:  YB4:
+    7A4,7B4,7C4,7D4,7E4,7F4,7G4,7H4,7I4,8A4,8B4,8C4,8D4,8E4,8F4,8G4,8H4,8I4,
+    YB4,YC4,YD4,YE4,YF4,YG4,YH4;
+West Sumatra/Riau:        28:  54:  OC:    0.75:  -101.75:    -7.0:  YB5:
+    7A5,7B5,7C5,7D5,7E5,7F5,7G5,7H5,7I5,8A5,8B5,8C5,8D5,8E5,8F5,8G5,8H5,8I5,
+    YB5,YC5,YD5,YE5,YF5,YG5,YH5;
+Aceh/North Sumatra:       28:  54:  OC:    2.97:   -99.77:    -7.0:  YB6:
+    7A6,7B6,7C6,7D6,7E6,7F6,7G6,7H6,7I6,8A6,8B6,8C6,8D6,8E6,8F6,8G6,8H6,8I6,
+    YB6,YC6,YD6,YE6,YF6,YG6,YH6;
+Borneo:                   28:  54:  OC:   -2.20:  -113.75:    -7.0:  YB7:
+    7A7,7B7,7C7,7D7,7E7,7F7,7G7,7H7,7I7,8A7,8B7,8C7,8D7,8E7,8F7,8G7,8H7,8I7,
+    YB7,YC7,YD7,YE7,YF7,YG7,YH7;
+Celebes/Maluku:           28:  54:  OC:    0.55:  -123.08:    -8.0:  YB8:
+    7A8,7B8,7C8,7D8,7E8,7F8,7G8,7H8,7I8,8A8,8B8,8C8,8D8,8E8,8F8,8G8,8H8,8I8,
+    YB8,YC8,YD8,YE8,YF8,YG8,YH8;
+Bali/Sonda/West Timor/We: 28:  51:  OC:   -2.52:  -140.78:    -9.0:  YB9:
+    7A9,7B9,7C9,7D9,7E9,7F9,7G9,7H9,7I9,8A9,8B9,8C9,8D9,8E9,8F9,8G9,8H9,8I9,
+    YB9,YC9,YD9,YE9,YF9,YG9,YH9;
+Auckland:                 32:  60:  OC:  -36.83:  -174.73:   -12.0:  ZL1:
+    ZL1,ZM1,=ZL75WARC;
+Wellington:               32:  60:  OC:  -41.28:  -174.78:   -12.0:  ZL2:
+    ZL2,ZM2;
+Canterbury:               32:  60:  OC:  -40.00:  -173.00:   -12.0:  ZL3:
+    ZL3,ZM3;
+Southland:                32:  60:  OC:  -45.87:  -170.50:   -12.0:  ZL4:
+    ZL4,ZM4,=ZL4LY;

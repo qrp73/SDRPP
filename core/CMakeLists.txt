@@ -181,6 +181,9 @@ else()
 
 endif ()
 
+find_package(OpenSSL REQUIRED)
+target_link_libraries(sdrpp_core PUBLIC OpenSSL::Crypto)
+
 find_package(fmt REQUIRED)
 target_link_libraries(sdrpp_core PUBLIC fmt::fmt)
 

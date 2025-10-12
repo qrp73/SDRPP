@@ -39,6 +39,11 @@ namespace core {
     ModuleComManager modComManager;
     CommandArgsParser args;
 
+    SDRPP_EXPORT const char* getRoot() {
+        static const char* rootPath = strdup(core::args["root"].s().c_str());
+        return rootPath;
+    }
+
     void setInputSampleRate(double samplerate) {
         // Forward this to the server
         if (args["server"].b()) { server::setInputSampleRate(samplerate); return; }
@@ -60,7 +65,7 @@ namespace core {
 
 // main
 int sdrpp_main(int argc, char* argv[]) {
-    flog::info("SDR++ v" VERSION_STR);
+    flog::info("SDRPP v" VERSION_STR);
 
 #ifdef IS_MACOS_BUNDLE
     // If this is a MacOS .app, CD to the correct directory

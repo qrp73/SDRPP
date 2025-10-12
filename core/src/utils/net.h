@@ -236,7 +236,7 @@ namespace net {
      * @param addr Remote address.
      * @return Socket instance on success, Throws runtime_error otherwise.
      */
-    std::shared_ptr<Socket> connect(const Address& addr);  
+    std::shared_ptr<Socket> connect(const Address& addr, int timeout_sec = 5);  
 
     /**
      * Create TCP connection.

@@ -50,12 +50,18 @@ namespace net {
 #endif
     }
 
-    void setNonblocking(SockHandle_t sock) {
+    void setBlockingMode(SockHandle_t sock, bool isBlocking) {
 #ifdef _WIN32
-        u_long enabled = 1;
-        ioctlsocket(sock, FIONBIO, &enabled);
+        u_long mode = isBlocking ? 0 : 1;
+        ioctlsocket(sock, FIONBIO, &mode);
 #else
-        fcntl(sock, F_SETFL, O_NONBLOCK);
+        int flags = fcntl(sock, F_GETFL, 0);
+        if (flags < 0) return; // optionally handle error
+        if (isBlocking)
+            flags &= ~O_NONBLOCK;
+        else
+            flags |= O_NONBLOCK;
+        fcntl(sock, F_SETFL, flags);
 #endif
     }
 
@@ -158,38 +164,95 @@ namespace net {
     }
 
     int Socket::recv(uint8_t* data, size_t maxLen, bool forceLen, int timeout, Address* dest) {
-        // Create FD set
-        fd_set set;
-        FD_ZERO(&set);
-        
+        // Initialize fd sets for select
+        fd_set readSet, exceptSet;
+        FD_ZERO(&readSet);
+        FD_ZERO(&exceptSet);
+    
         int read = 0;
         bool blocking = (timeout != NONBLOCKING);
+    
         do {
-            // Wait for data or error if 
             if (blocking) {
-                // Enable FD in set
-                FD_SET(sock, &set);
-
-                // Set timeout
+                // Add socket to read and except fd sets
+                FD_SET(sock, &readSet);
+                FD_SET(sock, &exceptSet);
+    
+                // Setup timeout structure
                 timeval tv;
-                tv.tv_sec = timeout / 1000;
-                tv.tv_usec = (timeout - tv.tv_sec*1000) * 1000;
-
-                // Wait for data
-                int err = select(sock+1, &set, NULL, &set, (timeout > 0) ? &tv : NULL);
-                if (err <= 0) { return err; }
+                tv.tv_sec = timeout / 1000;          // seconds part
+                tv.tv_usec = (timeout % 1000) * 1000; // microseconds part
+    
+                // Wait for data or error on socket
+                int sel = select(sock + 1, &readSet, NULL, &exceptSet, (timeout > 0) ? &tv : NULL);
+                if (sel == 0) {
+                    // Timeout expired, no data ready
+                    flog::warn("recv: select() timeout {} expired", timeout);
+                    return 0;
+                }
+                if (sel < 0) {
+                    // select error
+                    flog::error("recv: select() failed, errno={} ({})", errno, strerror(errno));
+                    return -1;
+                }
+                if (FD_ISSET(sock, &exceptSet)) {
+                    // Exception on socket (e.g. error), close and return
+                    flog::error("Socket exception detected, errno={} ({})", errno, strerror(errno));
+                    close();
+                    return -1;
+                    /*
+                    int error = 0;
+                    socklen_t len = sizeof(error);
+                    if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, &len) < 0) {
+                        // real system error
+                        flog::error("recv: getsockopt() failed, errno={} ({})", errno, strerror(errno));
+                        close();
+                        return -1;
+                    }
+                    if (error != 0) {
+                        // real TCP error
+                        flog::error("recv: TCP error={} ({})", error, strerror(error));
+                        close();
+                        return -1;
+                    }
+                    // error == 0 -> OOB-data?, ignore                    
+                    */
+                }
+                if (!FD_ISSET(sock, &readSet)) {
+                    // Socket not ready for reading, continue waiting
+                    flog::warn("recv: socket not ready for reading, continue waiting, errno={} ({})", errno, strerror(errno));
+                    continue;
+                }
             }
-
-            // Receive
+    
+            // Receive data from socket
             int addrLen = sizeof(sockaddr_in);
-            int err = ::recvfrom(sock, (char*)&data[read], maxLen - read, 0,(sockaddr*)(dest ? &dest->addr : NULL), (socklen_t*)(dest ? &addrLen : NULL));
-            if (err <= 0 && !WOULD_BLOCK) {
+            int err = ::recvfrom(sock, (char*)&data[read], maxLen - read, 0,
+                                 (sockaddr*)(dest ? &dest->addr : NULL),
+                                 (socklen_t*)(dest ? &addrLen : NULL));
+    
+            if (err < 0) {
+                // If operation in progress or would block, retry reading
+                if (errno == EINPROGRESS || errno == EAGAIN || errno == EWOULDBLOCK) {
+                    // not an error, just no data now, continue waiting
+                    continue;
+                }
+                // Other errors: log, close socket and return error
+                flog::error("recv failed, errno={} ({})", errno, strerror(errno));
                 close();
                 return err;
+            } else if (err == 0) {
+                // Connection closed by peer
+                flog::error("recv failed, connection reset");
+                close();
+                return 0;
+            } else {
+                // Increase total bytes read
+                read += err;
             }
-            read += err;
         }
-        while (blocking && forceLen && read < maxLen);
+        while (blocking && forceLen && read < (int)maxLen); // Loop if blocking mode, force reading full maxLen, and not done yet
+
         return read;
     }
 
@@ -255,7 +318,7 @@ namespace net {
         }
 
         // Enable nonblocking mode
-        setNonblocking(s);
+        setBlockingMode(s, false);
 
         return std::make_shared<Socket>(s);
     }
@@ -352,7 +415,7 @@ namespace net {
         }
 
         // Enable nonblocking mode
-        setNonblocking(s);
+        setBlockingMode(s, false);
 
         // Return listener class
         return std::make_shared<Listener>(s);
@@ -362,23 +425,52 @@ namespace net {
         return listen(Address(host, port));
     }
 
-    std::shared_ptr<Socket> connect(const Address& addr) {
+    std::shared_ptr<Socket> connect(const Address& addr, int timeout_sec) {
         // Init library if needed
         init();
 
         // Create socket
         SockHandle_t s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
-        // Connect to server
-        if (::connect(s, (sockaddr*)&addr.addr, sizeof(sockaddr_in))) {
-            closeSocket(s);
-            throw std::runtime_error("Could not connect");
-            return NULL;
+        if (s < 0) {
+            throw std::runtime_error("socket() failed");
         }
 
-        // Enable nonblocking mode
-        setNonblocking(s);
-
+        // Set non-blocking
+        setBlockingMode(s, false);
+        // Start connect
+        int res = ::connect(s, (sockaddr*)&addr.addr, sizeof(sockaddr_in));
+#ifdef _WIN32
+        if (res < 0 && WSAGetLastError() != WSAEINPROGRESS) {
+#else
+        if (res < 0 && errno != EINPROGRESS) {
+#endif        
+            closeSocket(s);
+            throw std::runtime_error("connect() failed immediately");
+        }        
+        // Wait for socket to become writable (connect success/fail)
+        fd_set wfds;
+        FD_ZERO(&wfds);
+        FD_SET(s, &wfds);
+        timeval tv = {timeout_sec, 0};
+        res = select(s + 1, NULL, &wfds, NULL, &tv);
+        if (res == 0) {
+            closeSocket(s);
+            throw std::runtime_error("connect() timeout");
+        } else if (res < 0) {
+            closeSocket(s);
+            throw std::runtime_error("select() error");
+        }
+        // Check connection result
+        int err = 0;
+#ifdef _WIN32
+        int len = sizeof(err);
+#else
+        socklen_t len = sizeof(err);
+#endif        
+        if (getsockopt(s, SOL_SOCKET, SO_ERROR, &err, &len) < 0 || err != 0) {
+            closeSocket(s);
+            throw std::runtime_error("connect() failed after select");
+        }
         // Return socket class
         return std::make_shared<Socket>(s);
     }
