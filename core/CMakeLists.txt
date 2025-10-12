@@ -181,6 +181,9 @@ else()
 
 endif ()
 
+find_package(fmt REQUIRED)
+target_link_libraries(sdrpp_core PUBLIC fmt::fmt)
+
 find_package(FLAC REQUIRED)
 target_link_libraries(sdrpp_core PUBLIC FLAC::FLAC)
 

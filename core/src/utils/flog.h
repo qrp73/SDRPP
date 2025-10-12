@@ -1,77 +1,112 @@
+/* 
+ * This file is part of the SDRPP distribution (https://github.com/qrp73/SDRPP).
+ * Copyright (c) 2025 qrp73.
+ * 
+ * This program is free software: you can redistribute it and/or modify  
+ * it under the terms of the GNU General Public License as published by  
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but 
+ * WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License 
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
 #pragma once
-#include <vector>
 #include <string>
-#include <stdint.h>
+#include <vector>
+#include <memory>
+#include <exception>
+#include <utility>
+#include <chrono>
+#include "utils/stack_trace.h"
+
+// --- Select implementation ---
+// TODO: test
+//#if __cplusplus >= 202002L && __has_include(<format>)
+//    #include <format>
+//    namespace fmt_impl = std;
+//    //#pragma message("Using std::format (C++20)")
+//#elif __has_include(<fmt/core.h>)
+#if __has_include(<fmt/core.h>)
+    #include <fmt/core.h>
+    namespace fmt_impl = fmt;
+    //#pragma message("Using fmtlib")
+#else
+    #error "No suitable format library available (std::format or fmt::format required)"
+#endif
+
+
 
 namespace flog {
-    enum Type {
-        TYPE_DEBUG,
-        TYPE_INFO,
-        TYPE_WARNING,
-        TYPE_ERROR,
-        _TYPE_COUNT
-    };
 
-    // IO functions
-    void __log__(Type type, const char* fmt, const std::vector<std::string>& args);
+    enum Type { TYPE_DEBUG, TYPE_INFO, TYPE_WARN, TYPE_ERROR };
+    void logImpl(flog::Type type, std::string msg, const std::chrono::time_point<std::chrono::steady_clock> steady_ts, const std::shared_ptr<const stack_trace> trace = nullptr);
 
-    // Conversion functions
-    std::string __toString__(bool value);
-    std::string __toString__(char value);
-    std::string __toString__(int8_t value);
-    std::string __toString__(int16_t value);
-    std::string __toString__(int32_t value);
-    std::string __toString__(int64_t value);
-    std::string __toString__(uint8_t value);
-    std::string __toString__(uint16_t value);
-    std::string __toString__(uint32_t value);
-    std::string __toString__(uint64_t value);
-    std::string __toString__(float value);
-    std::string __toString__(double value);
-    std::string __toString__(const char* value);
-    std::string __toString__(const void* value);
-    template <class T>
-    std::string __toString__(const T& value) {
-        return (std::string)value;
-    }
+    void exception(const std::exception& e);
+    void exception();                           // for catch(...)
 
-    // Utility to generate a list from arguments
-    inline void __genArgList__(std::vector<std::string>& args) {}
-    template <typename First, typename... Others>
-    inline void __genArgList__(std::vector<std::string>& args, First first, Others... others) {
-        // Add argument
-        args.push_back(__toString__(first));
-
-        // Recursive call that will be unrolled since the function is inline
-        __genArgList__(args, others...);
-    }
-
-    // Logging functions
+    // --- format wrapper ---
     template <typename... Args>
-    void log(Type type, const char* fmt, Args... args) {
-        std::vector<std::string> _args;
-        _args.reserve(sizeof...(args));
-        __genArgList__(_args, args...);
-        __log__(type, fmt, _args);
+    inline std::string formatSafe(fmt_impl::format_string<Args...> fmt_str, Args&&... args) {
+        try {
+            return fmt_impl::format(fmt_str, std::forward<Args>(args)...);
+        } catch (const std::exception& ex) { 
+            flog::exception(ex); 
+            fmt::string_view sv = fmt_str;
+            return "[flog::formatSafe() exception, fmt_str=\"" + std::string(sv.data(), sv.size()) + "\"]";
+        } catch (...) { 
+            flog::exception(); 
+            fmt::string_view sv = fmt_str;
+            return "[flog::formatSafe() exception, fmt_str=\"" + std::string(sv.data(), sv.size()) + "\"]";
+        }
+    }
+    
+    // --- Public template log functions ---
+    template <typename... Args>
+    inline void debug(fmt_impl::format_string<Args...> fmt, Args&&... args) {
+        auto ts = std::chrono::steady_clock::now();
+        auto msg = flog::formatSafe(fmt, std::forward<Args>(args)...);
+        logImpl(flog::Type::TYPE_DEBUG, msg, ts);
     }
 
     template <typename... Args>
-    inline void debug(const char* fmt, Args... args) {
-        log(TYPE_DEBUG, fmt, args...);
+    inline void info(fmt_impl::format_string<Args...> fmt, Args&&... args) {
+        auto ts = std::chrono::steady_clock::now();
+        auto msg = flog::formatSafe(fmt, std::forward<Args>(args)...);
+        logImpl(flog::Type::TYPE_INFO, msg, ts);
     }
 
     template <typename... Args>
-    inline void info(const char* fmt, Args... args) {
-        log(TYPE_INFO, fmt, args...);
+    inline void warn(fmt_impl::format_string<Args...> fmt, Args&&... args) {
+        auto ts = std::chrono::steady_clock::now();
+        auto msg = flog::formatSafe(fmt, std::forward<Args>(args)...);
+        logImpl(flog::Type::TYPE_WARN, msg, ts);
     }
 
     template <typename... Args>
-    inline void warn(const char* fmt, Args... args) {
-        log(TYPE_WARNING, fmt, args...);
+    inline void error(fmt_impl::format_string<Args...> fmt, Args&&... args) {
+        auto ts = std::chrono::steady_clock::now();
+        auto msg = flog::formatSafe(fmt, std::forward<Args>(args)...);
+        logImpl(flog::Type::TYPE_ERROR, msg, ts);
     }
-
-    template <typename... Args>
-    inline void error(const char* fmt, Args... args) {
-        log(TYPE_ERROR, fmt, args...);
+    
+    inline void debug(fmt_impl::string_view msg) {
+        auto ts = std::chrono::steady_clock::now();
+        logImpl(flog::Type::TYPE_DEBUG, std::string(msg.data(), msg.size()), ts);
     }
-}
+    inline void info (fmt_impl::string_view msg) {
+        auto ts = std::chrono::steady_clock::now();
+        logImpl(flog::Type::TYPE_INFO,  std::string(msg.data(), msg.size()), ts);
+    }
+    inline void warn (fmt_impl::string_view msg) {
+        auto ts = std::chrono::steady_clock::now();
+        logImpl(flog::Type::TYPE_WARN,  std::string(msg.data(), msg.size()), ts);
+    }
+    inline void error(fmt_impl::string_view msg) {
+        auto ts = std::chrono::steady_clock::now();
+        logImpl(flog::Type::TYPE_ERROR, std::string(msg.data(), msg.size()), ts);
+    }
+} // namespace flog

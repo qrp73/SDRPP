@@ -114,7 +114,7 @@ Install pre-requisites:
 ```
 sudo apt update
 sudo apt install -y \
-   git wget p7zip-full build-essential cmake cmake-curses-gui libtool xxd autoconf \
+   git wget p7zip-full build-essential cmake cmake-curses-gui libtool xxd autoconf libfmt-dev \
    libfftw3-dev libglfw3-dev libglew-dev libvolk2-dev libsoapysdr-dev libairspyhf-dev libairspy-dev \
    libiio-dev libad9361-dev librtaudio-dev libhackrf-dev librtlsdr-dev libbladerf-dev liblimesuite-dev \
    libcodec2-dev libzstd-dev portaudio19-dev libsdl2-dev libflac-dev libmp3lame-dev
@@ -170,7 +170,7 @@ Install pre-requisites:
 ```
 sudo pacman -Syu
 sudo pacman -Sy \
-    git wget base-devel cmake core/libtool core/autoconf \
+    git wget base-devel cmake core/libtool core/autoconf fmt \
     fftw extra/glfw-x11 extra/glew libvolk extra/soapysdr extra/airspy \
     extra/libiio extra/libad9361 extra/rtaudio extra/hackrf extra/rx_tools extra/bladerf extra/limesuite \
     extra/codec2 core/zstd extra/portaudio rtl-sdr
