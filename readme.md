@@ -1,5 +1,6 @@
 # SDRPP, The SDR software with immediate mode GUI
 
+<img width="1280" height="1024" alt="20251012_15h21m19s_grim" src="https://github.com/user-attachments/assets/06e4657e-ee79-4e92-97d9-70e294e220b6" />
 
 This project is based on SDR++ code originaly written by Alexandre Rouma. This is modified version of code and explicitly marked as changed, so their problems will not be attributed erroneously to authors of original SDR++ code. 
 
