@@ -75,9 +75,13 @@ if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
     if (MSVC)
         set(SDRPP_COMPILER_FLAGS /std:c++17 /EHsc)
     elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        set(SDRPP_COMPILER_FLAGS -g -Og -std=c++17 -Wno-unused-command-line-argument -undefined dynamic_lookup)
+        set(SDRPP_COMPILER_FLAGS -g -Og -rdynamic -std=c++17 -Wno-unused-command-line-argument -undefined dynamic_lookup)
     else ()
-        set(SDRPP_COMPILER_FLAGS -g -Og -std=c++17)
+        #set(SDRPP_COMPILER_FLAGS -g -Og -rdynamic -std=c++17)
+        
+        #set(SDRPP_COMPILER_FLAGS -g -O1 -fstack-protector-strong -fsanitize=address -fno-omit-frame-pointer -std=c++17)
+        #set(SDRPP_LINKER_FLAGS   -fsanitize=address)
+        set(SDRPP_COMPILER_FLAGS -g -Og -rdynamic -fstack-protector-strong -std=c++17)
     endif ()
 else()
     # Normal Flags
@@ -285,6 +289,9 @@ target_link_libraries(sdrpp PRIVATE sdrpp_core)
 
 # Compiler arguments
 target_compile_options(sdrpp PRIVATE ${SDRPP_COMPILER_FLAGS})
+if(DEFINED SDRPP_LINKER_FLAGS AND SDRPP_LINKER_FLAGS)
+    target_link_options(sdrpp PRIVATE ${SDRPP_LINKER_FLAGS})
+endif()
 
 # Copy dynamic libs over
 if (MSVC)
@@ -335,8 +342,8 @@ add_custom_target(uninstall ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmak
 
 if(NOT WIN32)
   string(ASCII 27 Esc)
-  set(ColourReset "${Esc}[m")
-  set(ColourBold  "${Esc}[1m")
+  set(ColorReset  "${Esc}[m")
+  set(ColorBold   "${Esc}[1m")
   set(Red         "${Esc}[31m")
   set(Green       "${Esc}[32m")
   set(Yellow      "${Esc}[33m")
@@ -352,11 +359,16 @@ if(NOT WIN32)
   set(BoldCyan    "${Esc}[1;36m")
   set(BoldWhite   "${Esc}[1;37m")
 endif()
+
+#get_target_property(SDRPP_COMPILE_OPTIONS sdrpp COMPILE_OPTIONS)
+#get_target_property(SDRPP_LINK_OPTIONS    sdrpp LINK_OPTIONS)
 add_custom_target(print_vars
-    COMMAND ${CMAKE_COMMAND} -E echo "${BoldYellow}CMAKE_C_COMPILER:   ${ColourReset} ${CMAKE_C_COMPILER}"
-    COMMAND ${CMAKE_COMMAND} -E echo "${BoldYellow}CMAKE_CXX_COMPILER: ${ColourReset} ${CMAKE_CXX_COMPILER}"
-    COMMAND ${CMAKE_COMMAND} -E echo "${BoldYellow}COMPILE_OPTIONS:    ${ColourReset} $<TARGET_PROPERTY:sdrpp,COMPILE_OPTIONS>"
-    COMMAND ${CMAKE_COMMAND} -E echo "${BoldYellow}CMAKE_BUILD_TYPE:   ${ColourReset} ${CMAKE_BUILD_TYPE}"
+    COMMAND ${CMAKE_COMMAND} -E echo "${BoldYellow}CMAKE_BUILD_TYPE:   ${ColorReset} ${CMAKE_BUILD_TYPE}"
+    COMMAND ${CMAKE_COMMAND} -E echo "${BoldYellow}CMAKE_C_COMPILER:   ${ColorReset} ${CMAKE_C_COMPILER}"
+    COMMAND ${CMAKE_COMMAND} -E echo "${BoldYellow}CMAKE_CXX_COMPILER: ${ColorReset} ${CMAKE_CXX_COMPILER}"
+    COMMAND ${CMAKE_COMMAND} -E echo "${BoldYellow}COMPILE_OPTIONS:    ${ColorReset} $<TARGET_PROPERTY:${PROJECT_NAME},COMPILE_OPTIONS>"
+    COMMAND ${CMAKE_COMMAND} -E echo "${BoldYellow}LINK_OPTIONS:       ${ColorReset} $<TARGET_PROPERTY:${PROJECT_NAME},LINK_OPTIONS>"
+    COMMAND ${CMAKE_COMMAND} -E echo "${BoldYellow}INCLUDE_DIRECTORIES:${ColorReset} $<TARGET_PROPERTY:${PROJECT_NAME},INCLUDE_DIRECTORIES>"
     VERBATIM
 )
-add_dependencies(sdrpp print_vars)
+add_dependencies(${PROJECT_NAME} print_vars)
