@@ -8,6 +8,7 @@
 #include "power_decimator.h"
 #include "../taps/low_pass.h"
 #include "../window/nuttall.h"
+#include "utils/flog.h"
 
 namespace dsp::multirate {
     template<class T>
@@ -159,7 +160,8 @@ namespace dsp::multirate {
             for (int i = 0; i < rtaps.size; i++) { rtaps.taps[i] *= (float)interp; }
             resamp.setRatio(interp, decim, rtaps);
 
-            printf("[Resamp] predec: %d, interp: %d, decim: %d, inacc: %lf%%, taps: %d\n", predecRatio, interp, decim, error, rtaps.size);
+            //printf("[Resamp] predec: %d, interp: %d, decim: %d, inacc: %lf%%, taps: %d\n", predecRatio, interp, decim, error, rtaps.size);
+            flog::debug("[Resamp] predec: {}, interp: {}, decim: {}, inacc: {}%, taps: {}", predecRatio, interp, decim, error, rtaps.size);
 
             mode = useDecim ? Mode::BOTH : Mode::RESAMP_ONLY;
         }
