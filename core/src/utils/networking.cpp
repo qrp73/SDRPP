@@ -14,8 +14,8 @@ namespace net {
         _udp = udp;
         remoteAddr = raddr;
         connectionOpen = true;
-        readWorkerThread = std::thread(&ConnClass::readWorker, this);
-        writeWorkerThread = std::thread(&ConnClass::writeWorker, this);
+        readWorkerThread  = threading::thread("net:readWorker",  &ConnClass::readWorker, this);
+        writeWorkerThread = threading::thread("net:writeWorker", &ConnClass::writeWorker, this);
     }
 
     ConnClass::~ConnClass() {
@@ -229,7 +229,7 @@ namespace net {
     ListenerClass::ListenerClass(Socket listenSock) {
         sock = listenSock;
         listening = true;
-        acceptWorkerThread = std::thread(&ListenerClass::worker, this);
+        acceptWorkerThread = threading::thread("net:listnWorker", &ListenerClass::worker, this);
     }
 
     ListenerClass::~ListenerClass() {

@@ -1,6 +1,7 @@
 #pragma once
 #include "../block.h"
 #include "ring_buffer.h"
+#include <utils/threading.h>
 
 // IMPORTANT: THIS IS TRASH AND MUST BE REWRITTEN IN THE FUTURE
 
@@ -70,8 +71,8 @@ namespace dsp::buffer {
 
     private:
         void doStart() override {
-            workThread = std::thread(&Reshaper<T>::loop, this);
-            bufferWorkerThread = std::thread(&Reshaper<T>::bufferWorker, this);
+            workThread         = threading::thread("dspReshp:loop", &Reshaper<T>::loop, this);
+            bufferWorkerThread = threading::thread("dspReshp:worker", &Reshaper<T>::bufferWorker, this);
         }
 
         void loop() {
@@ -130,8 +131,8 @@ namespace dsp::buffer {
         stream<T>* _in;
         int _outBlockSize;
         RingBuffer<T> ringBuf;
-        std::thread bufferWorkerThread;
-        std::thread workThread;
+        threading::thread bufferWorkerThread;
+        threading::thread workThread;
         int _keep, _skip;
     };
 }

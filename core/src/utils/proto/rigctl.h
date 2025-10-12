@@ -4,6 +4,7 @@
 #include <string>
 #include <functional>
 #include <thread>
+#include <utils/threading.h>
 
 namespace net::rigctl {
     enum Mode {
@@ -314,7 +315,7 @@ namespace net::rigctl {
         std::function<int(double&)> getFreqHandler = NULL;
         std::function<int(double)> setFreqHandler = NULL;
 
-        std::thread listenThread;
+        threading::thread listenThread;
         std::shared_ptr<net::Listener> listener;
 
         std::mutex socketsMtx;

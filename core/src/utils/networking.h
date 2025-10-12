@@ -7,6 +7,7 @@
 #include <memory>
 #include <thread>
 #include <condition_variable>
+#include <utils/threading.h>
 
 #ifdef _WIN32
 #include <WinSock2.h>
@@ -73,8 +74,8 @@ namespace net {
         std::condition_variable connectionOpenCnd;
         std::vector<ConnReadEntry> readQueue;
         std::vector<ConnWriteEntry> writeQueue;
-        std::thread readWorkerThread;
-        std::thread writeWorkerThread;
+        threading::thread readWorkerThread;
+        threading::thread writeWorkerThread;
 
         Socket _sock;
         bool _udp;
@@ -109,7 +110,7 @@ namespace net {
         std::mutex acceptQueueMtx;
         std::condition_variable acceptQueueCnd;
         std::vector<ListenerAcceptEntry> acceptQueue;
-        std::thread acceptWorkerThread;
+        threading::thread acceptWorkerThread;
 
         Socket sock;
     };

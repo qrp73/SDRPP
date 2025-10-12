@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <string>
 #include <thread>
+#include <utils/threading.h>
 
 class FolderSelect {
 public:
@@ -19,7 +20,7 @@ public:
 
 private:
     void worker();
-    std::thread workerThread;
+    threading::thread workerThread;
     std::string root = "";
 
     bool pathValid = false;

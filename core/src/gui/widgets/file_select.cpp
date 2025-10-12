@@ -38,7 +38,7 @@ bool FileSelect::render(std::string id) {
     if (ImGui::Button(("..." + id + "_winselect").c_str(), ImVec2(buttonWidth - 8.0f, 0)) && !dialogOpen) {
         dialogOpen = true;
         if (workerThread.joinable()) { workerThread.join(); }
-        workerThread = std::thread(&FileSelect::worker, this);
+        workerThread = threading::thread("fileSel:worker", &FileSelect::worker, this);
     }
 
     _pathChanged |= pathChanged;

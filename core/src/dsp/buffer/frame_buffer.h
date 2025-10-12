@@ -1,6 +1,7 @@
 #pragma once
 #include "../block.h"
 #define TEST_BUFFER_SIZE 32
+#include <utils/threading.h>
 
 // IMPORTANT: THIS IS TRASH AND MUST BE REWRITTEN IN THE FUTURE
 
@@ -101,8 +102,8 @@ namespace dsp::buffer {
 
     private:
         void doStart() {
-            base_type::workerThread = std::thread(&SampleFrameBuffer<T>::workerLoop, this);
-            readWorkerThread = std::thread(&SampleFrameBuffer<T>::worker, this);
+            base_type::workerThread = threading::thread("dspBuf:loop", &SampleFrameBuffer<T>::workerLoop, this);
+            readWorkerThread        = threading::thread("dspBuf:worker", &SampleFrameBuffer<T>::worker, this);
         }
 
         void doStop() {
@@ -121,7 +122,7 @@ namespace dsp::buffer {
 
         stream<T>* _in;
 
-        std::thread readWorkerThread;
+        threading::thread readWorkerThread;
         std::mutex bufMtx;
         std::condition_variable cnd;
         T* buffers[TEST_BUFFER_SIZE];

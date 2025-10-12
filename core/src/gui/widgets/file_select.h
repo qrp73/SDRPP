@@ -5,6 +5,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <utils/threading.h>
 
 class FileSelect {
 public:
@@ -20,7 +21,7 @@ public:
 
 private:
     void worker();
-    std::thread workerThread;
+    threading::thread workerThread;
     std::vector<std::string> _filter;
     std::string root = "";
 

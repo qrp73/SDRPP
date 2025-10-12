@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "stream.h"
 #include "types.h"
+#include <utils/threading.h>
 
 namespace dsp {
     class generic_block {
@@ -71,7 +72,7 @@ namespace dsp {
         }
 
         virtual void doStart() {
-            workerThread = std::thread(&block::workerLoop, this);
+            workerThread = threading::thread("dspBlock:worker", &block::workerLoop, this);
         }
 
         virtual void doStop() {
@@ -129,6 +130,6 @@ namespace dsp {
         bool running = false;
         bool tempStopped = false;
         int tempStopDepth = 0;
-        std::thread workerThread;
+        threading::thread workerThread;
     };
 }

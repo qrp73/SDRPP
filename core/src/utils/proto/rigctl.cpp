@@ -228,7 +228,7 @@ namespace net::rigctl {
 
     Server::Server(std::shared_ptr<net::Listener> listener) {
         this->listener = listener;
-        listenThread = std::thread(&Server::listenWorker, this);
+        listenThread = threading::thread("rigSrv:listen", &Server::listenWorker, this);
     }
 
     Server::~Server() {
@@ -264,7 +264,7 @@ namespace net::rigctl {
             }
 
             // Start handler thread
-            std::thread acceptThread(&Server::acceptWorker, this, sock);
+            threading::thread acceptThread("rigSrv:acptWrkr", &Server::acceptWorker, this, sock);
             acceptThread.detach();
         }
     }
