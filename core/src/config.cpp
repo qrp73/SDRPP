@@ -298,8 +298,7 @@ void ConfigManager::enableAutoSave() {
     worker_service::getInstance().addWorker(this, [this] {
         if (changed.exchange(false)) {
             //flog::debug("test {}", path);
-            std::lock_guard<std::mutex> lock(mtx);
-            save(false);
+            save(true);
         }
     });
 }
@@ -316,7 +315,9 @@ void ConfigManager::acquire() {
 void ConfigManager::release(bool modified) {
     if (modified) {
         changed.store(true);
-        worker_service::getInstance().wake();
     }
     mtx.unlock();
+    if (modified) {
+        worker_service::getInstance().wake();
+    }
 }
