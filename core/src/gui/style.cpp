@@ -34,7 +34,7 @@ namespace style {
 
         // Create big font range
         ImFontGlyphRangesBuilder bigBuilder;
-        const ImWchar bigRange[] = { '.', '9', 0 };
+        const ImWchar bigRange[] = { 0x02D9, 0x02D9,'-','-', '\'','\'', ',',',', '.', '9', ' ',' ', 0 };
         bigBuilder.AddRanges(bigRange);
         bigBuilder.BuildRanges(&bigRanges);
 
@@ -47,6 +47,7 @@ namespace style {
         // Add bigger fonts for frequency select and title
         baseFont = fonts->AddFontFromFileTTF(((std::string)(resDir + "/fonts/Roboto-Medium.ttf")).c_str(), 16.0f * uiScale, NULL, baseRanges.Data);
         bigFont = fonts->AddFontFromFileTTF(((std::string)(resDir + "/fonts/Roboto-Medium.ttf")).c_str(), 45.0f * uiScale, NULL, bigRanges.Data);
+        //bigFont = fonts->AddFontFromFileTTF(((std::string)(resDir + "/fonts/lcd7.ttf")).c_str(), 45.0f * uiScale, NULL, bigRanges.Data);
         hugeFont = fonts->AddFontFromFileTTF(((std::string)(resDir + "/fonts/Roboto-Medium.ttf")).c_str(), 128.0f * uiScale, NULL, hugeRanges.Data);
 
         return true;

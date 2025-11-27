@@ -1,7 +1,8 @@
 #pragma once
+#include <stdint.h>
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <stdint.h>
 
 class FrequencySelect {
 public:
@@ -18,7 +19,6 @@ public:
 
 private:
     void onPosChange();
-    void onResize();
     void incrementDigit(int i);
     void decrementDigit(int i);
     void digitUp(int i);
@@ -29,6 +29,10 @@ private:
 
     ImVec2 _widgetPos = ImVec2(0,0);
     ImVec2 _lastWidgetPos = ImVec2(-1,-1);
+    
+    ImVec2 _digitSz = ImVec2(0,0);
+    ImVec2 _groupSz = ImVec2(0,0);
+    ImVec2 _minusSz = ImVec2(0,0);
 
     int     _digits[12];
     ImRect  _digitTop[12];
