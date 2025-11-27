@@ -47,6 +47,7 @@ namespace threading {
     
     void thread::onStarting(const std::string& name) {
         threading::getThreadHash();
+        (void)name; // suppress unused parameter warning
     }
     void thread::onStarted(const std::string& name) {
         threading::getThreadHash();
@@ -55,6 +56,7 @@ namespace threading {
     }
     void thread::onFinished(const std::string& name) {
         //flog::debug("thread {:x} {} finished", threading::getThreadHash(), name);
+        (void)name; // suppress unused parameter warning
     }
     
 
