@@ -1,0 +1,15 @@
+{
+    "name": "Spectravue",
+    "author": "https://community.libre.space/t/waterfall-gradients/1082",
+    "map": [
+        "#000000",
+        "#0000e7",
+        "#0094ff",
+        "#00ffb8",
+        "#2eff00",
+        "#ffff00",
+        "#ff8800",
+        "#ff0000",
+        "#ff007c"
+  ]
+}

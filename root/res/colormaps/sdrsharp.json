@@ -1,0 +1,19 @@
+{
+    "name": "SDR#",
+    "author": "https://community.libre.space/t/waterfall-gradients/1082",
+    "map": [
+        "#000020",
+        "#000030",
+        "#000050",
+        "#000091",
+        "#1E90FF",
+        "#FFFFFF",
+        "#FFFF00",
+        "#FE6D16",
+        "#FF0000",
+        "#C60000",
+        "#9F0000",
+        "#750000",
+        "#4A0000"
+  ]
+}
