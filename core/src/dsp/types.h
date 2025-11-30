@@ -77,7 +77,7 @@ namespace dsp {
         }
 
         inline float amplitude() const {
-            return sqrt((re * re) + (im * im));
+            return sqrtf((re * re) + (im * im));
         }
 
         inline float fastAmplitude() const {
