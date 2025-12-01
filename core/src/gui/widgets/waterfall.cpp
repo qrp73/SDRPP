@@ -240,13 +240,7 @@ namespace ImGui {
     }
 
     void WaterFall::processInputs() {
-        ImGuiID id = ImGui::GetID("waterfall");
-        ImGui::SetKeyOwner(ImGuiKey_PageUp, id);
-        ImGui::SetKeyOwner(ImGuiKey_PageDown, id);
-        ImGui::SetKeyOwner(ImGuiKey_LeftArrow, id);
-        ImGui::SetKeyOwner(ImGuiKey_RightArrow, id);
-        ImGui::SetKeyOwner(ImGuiKey_UpArrow, id);
-        ImGui::SetKeyOwner(ImGuiKey_DownArrow, id);
+        ImGuiID wfid = ImGui::GetID("WaterfallID");
         
         // Pre calculate useful values
         WaterfallVFO* selVfo = NULL;
@@ -258,8 +252,16 @@ namespace ImGui {
         ImVec2 dragOrigin(mousePos.x - drag.x, mousePos.y - drag.y);
 
         bool mouseHovered, mouseHeld;
-        bool mouseClicked = ImGui::ButtonBehavior(ImRect(fftAreaMin, wfMax), GetID("WaterfallID"), &mouseHovered, &mouseHeld,
+        bool mouseClicked = ImGui::ButtonBehavior(ImRect(fftAreaMin, wfMax), wfid, &mouseHovered, &mouseHeld,
                                                   ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_PressedOnClick);
+                                                  
+        if (mouseHovered) {
+            ImGui::SetKeyOwner(ImGuiKey_LeftArrow,  wfid);
+            ImGui::SetKeyOwner(ImGuiKey_RightArrow, wfid);
+            ImGui::SetKeyOwner(ImGuiKey_PageUp,     wfid);
+            ImGui::SetKeyOwner(ImGuiKey_PageDown,   wfid);
+        }
+                                                  
 
         mouseInFFTResize = (dragOrigin.x > widgetPos.x && dragOrigin.x < widgetPos.x + widgetSize.x && dragOrigin.y >= widgetPos.y + newFFTAreaHeight - (2.0f * style::uiScale) && dragOrigin.y <= widgetPos.y + newFFTAreaHeight + (2.0f * style::uiScale));
         mouseInFreq = IS_IN_AREA(dragOrigin, freqAreaMin, freqAreaMax);
