@@ -319,22 +319,30 @@ int sdrpp_main(int argc, char* argv[]) {
     }
 
     // Remove unused elements
-    auto items = core::configManager.conf.items();
-    for (auto const& item : items) {
+    std::vector<std::string> unusedKeys;
+    for (auto const& item : core::configManager.conf.items()) {
         if (!defConfig.contains(item.key())) {
-            flog::warn("Unused key in config {0}, repairing", item.key());
-            core::configManager.conf.erase(item.key());
+            unusedKeys.push_back(item.key());
         }
+    }
+    for (auto const& k : unusedKeys) {
+        flog::warn("Unused key in config {0}, repairing", k);
+        core::configManager.conf.erase(k);
     }
 
     // Update to new module representation in config if needed
-    for (auto [_name, inst] : core::configManager.conf["moduleInstances"].items()) {
+    std::vector<std::string> newKeys;
+    for (auto& item : core::configManager.conf["moduleInstances"].items()) {
+        newKeys.push_back(item.key());
+    }
+    for (auto& name : newKeys) {
+        auto& inst = core::configManager.conf["moduleInstances"][name];
         if (!inst.is_string()) { continue; }
         std::string mod = inst;
         json newMod;
         newMod["module"] = mod;
         newMod["enabled"] = true;
-        core::configManager.conf["moduleInstances"][_name] = newMod;
+        core::configManager.conf["moduleInstances"][name] = newMod;
     }
 
     // Load UI scaling
