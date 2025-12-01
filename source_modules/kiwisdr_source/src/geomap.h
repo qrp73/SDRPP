@@ -45,6 +45,12 @@ namespace geomap {
     struct GeoCoordinates {
         double latitude;
         double longitude;
+        
+        std::string toString() const {
+            char buf[128];
+            std::snprintf(buf, sizeof(buf), "Lat: %.6f, Lon: %.6f", latitude, longitude);
+            return std::string(buf);
+        }        
     };
 
     struct CountryPolygon {

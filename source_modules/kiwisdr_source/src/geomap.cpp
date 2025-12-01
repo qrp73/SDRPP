@@ -440,7 +440,8 @@ namespace geomap {
         
         // Show tooltip if hovering a country
         if (!hoveredCountry.empty() && ImGui::IsWindowHovered()) {
-            auto tooltip = hoveredCountry + "\n" + geo2qth(cartesianToGeo(mouseMapPos));
+            auto geoPos = cartesianToGeo(mouseMapPos);
+            auto tooltip = hoveredCountry + "\n" + geo2qth(geoPos) + "\n" + geoPos.toString();
             ImGui::BeginTooltip();
             ImGui::TextUnformatted(tooltip.c_str());
             ImGui::EndTooltip();
