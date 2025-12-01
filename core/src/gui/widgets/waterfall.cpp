@@ -240,6 +240,14 @@ namespace ImGui {
     }
 
     void WaterFall::processInputs() {
+        ImGuiID id = ImGui::GetID("waterfall");
+        ImGui::SetKeyOwner(ImGuiKey_PageUp, id);
+        ImGui::SetKeyOwner(ImGuiKey_PageDown, id);
+        ImGui::SetKeyOwner(ImGuiKey_LeftArrow, id);
+        ImGui::SetKeyOwner(ImGuiKey_RightArrow, id);
+        ImGui::SetKeyOwner(ImGuiKey_UpArrow, id);
+        ImGui::SetKeyOwner(ImGuiKey_DownArrow, id);
+        
         // Pre calculate useful values
         WaterfallVFO* selVfo = NULL;
         if (selectedVFO != "") {
