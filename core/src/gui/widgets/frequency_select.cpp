@@ -4,7 +4,7 @@
 #include <utils/flog.h>
 
 
-//#define USE_LED7
+#define USE_LED7
 
 
 #ifdef USE_LED7
