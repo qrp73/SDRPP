@@ -21,6 +21,9 @@ Have good day and 73
 - added manual/auto AGC switch to allow manual gain control for CW/LSB/USB/DSB/AM
 - SNR meter replaced with level meter + peak meter + level and SNR text indication in dB
   ![20250322_02h06m51s_grim](https://github.com/user-attachments/assets/731e2c77-f449-4da8-a777-daff1c8b364e)
+- frequency_selector: reworked rendering and mouse processing, replaced with 7-segment font
+  <img width="401" height="86" alt="20260310_01h28m03s_grim" src="https://github.com/user-attachments/assets/1fdd32e3-5a55-4cba-8bb0-b3f19a8b4a92" />
+
 - unity gain for FFT and window functions
 - added Blackman-Harris-7, Blackman-Harris-4, Hamming and Hann window functions
 - added 1M FFT
