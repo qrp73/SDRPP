@@ -143,7 +143,11 @@ private:
         }
         if (_playTimer < now) {
             // Playback is lagging behind real time - resynchronize timer
-            flog::warn("file_source: buffer underrun detected - clock resynchronize");
+            //flog::warn("file_source: buffer underrun detected - clock resynchronize");
+            if (now >= _underrunLogAllowedAt) { // cooldown to max once per second to avoid log spam
+                flog::warn("file_source: buffer underrun detected - clock resynchronize");
+                _underrunLogAllowedAt = now + std::chrono::seconds(1);
+            }            
             _playTimer = now;       
         }
         return true;
@@ -185,6 +189,7 @@ private:
         flog::info("FileSource: start('{0}')", _this->name);
         if (_this->_running) { return; }
         if (_this->_reader == NULL) { return; }
+        _this->_underrunLogAllowedAt = std::chrono::steady_clock::time_point::min();
         _this->_playTimer = std::chrono::steady_clock::now();
         _this->_running = true;
         _this->_workerThread = std::thread(
@@ -604,6 +609,7 @@ private:
     int64_t _centerFreq = 0;
     std::string _fmtText;
     std::chrono::steady_clock::time_point _playTimer;
+    std::chrono::steady_clock::time_point _underrunLogAllowedAt;
 };
 
 MOD_EXPORT void _INIT_() {
