@@ -47,8 +47,9 @@ public:
         _file.read((char*)&riff_id,   sizeof(riff_id));
         _file.read((char*)&riff_size, sizeof(riff_size));
         _file.read((char*)&riff_type, sizeof(riff_type));
-        if (memcmp(&riff_id,   "RIFF", 4) != 0 ||
-            memcmp(&riff_type, "WAVE", 4) != 0) { 
+        bool isRIFF = memcmp(&riff_id,   "RIFF", 4) == 0;
+        bool isRF64 = memcmp(&riff_id,   "RF64", 4) == 0;
+        if (!(isRIFF || isRF64) || memcmp(&riff_type, "WAVE", 4) != 0) { 
             throw std::runtime_error("Invalid WAV file");
         }
         reset();
@@ -115,7 +116,22 @@ public:
             memset(sbuf, 0, sizeof(sbuf));
             memcpy(sbuf, &chunkId, 4);
             //flog::debug("chunk \"{0}\", size {1}", sbuf, chunkSize);
-            if (memcmp(&chunkId, "fmt ", 4) == 0) {
+            if (memcmp(&chunkId, "ds64", 4) == 0) {
+                uint64_t riffSize64;
+                uint64_t dataSize64;
+                uint64_t sampleCount64;
+                uint32_t tableLength;
+                _file.read((char*)&riffSize64,    sizeof(riffSize64));
+                _file.read((char*)&dataSize64,    sizeof(dataSize64));
+                _file.read((char*)&sampleCount64, sizeof(sampleCount64));
+                _file.read((char*)&tableLength,   sizeof(tableLength));
+                // Skip optional chunk size table
+                if (tableLength > 0) {
+                    _file.seekg(tableLength * 12, std::ios_base::cur);
+                }
+                continue;
+            }
+            else if (memcmp(&chunkId, "fmt ", 4) == 0) {
                 const auto fmt_Size = chunkSize;
                 if (fmt_Size < 16 || (fmt_Size > 16 && fmt_Size < 18)) {
                     throw std::runtime_error("Invalid fmt chunk size " + std::to_string(fmt_Size));
